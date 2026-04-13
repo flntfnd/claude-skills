@@ -279,15 +279,17 @@ No border-radius. No shadows. No colors beyond black and white unless a single a
 
 # 4. Liquid Glass (Navigation Layer)
 
-Covered in detail in DESIGN-Apple.md (Apple platforms). Summary for cross-platform reference:
+Covered in detail in APPLE.md (Apple platforms). Summary for cross-platform reference:
 
-Glass belongs on the navigation layer. Content sits below it. The material adapts to what's behind it.
+Glass belongs on the navigation layer. Content sits below it. The material adapts to what's behind it. Liquid Glass is a layout decision, not a surface texture applied after the fact.
 
 **When to use**: iOS 26+, iPadOS 26+, macOS Tahoe 26+ apps that follow Apple's HIG.
 
 **On Web**: Liquid Glass as Apple defines it (real-time lensing, specular response to device motion) is not achievable in a browser. Use the Glassmorphism / Frosted style (style #5) for web surfaces that need the same depth and translucency intent. The Figma Glass effect with Refraction and Frost parameters approximates the visual for mockups, but the web implementation falls back to `backdrop-filter: blur()` with appropriate fill opacity and inner highlight stroke.
 
-Token and implementation details for native: `~/.claude/skills/DESIGN-Apple.md`.
+**Known usability failure modes** (documented by NN/g and others in iOS 26's release): text placed over glass controls that sits on top of other text becomes unreadable; glass navigation bars that blend into complex wallpapers become invisible; overuse of motion and physics in the glass layer creates an interface that competes with content for attention rather than supporting it. These are failure modes to avoid, not examples to follow.
+
+Token and implementation details for native: `~/.claude/skills/APPLE.md`.
 
 ---
 
@@ -316,6 +318,10 @@ dark, rich backgrounds work best (gradients, imagery, deep color fields)
 ## Component Rules
 
 Apply to floating elements only: nav bars, cards over imagery, modals, tooltips. Never to the page background itself. Never to content-dense areas where text readability is critical without adjustment. Text on glass needs either a shadow or sufficient frost to remain legible.
+
+**Scrim technique for legibility**: when glass sits over unpredictable backgrounds (user-generated imagery, video, dynamic content), add a semi-opaque gradient inside the glass component to guarantee text contrast regardless of what's behind it. A subtle dark scrim (rgba(0,0,0,0.15) to transparent, bottom-to-top) for dark text, or a light scrim for light text on dark glass. This is how streaming apps (Spotify, Apple Music) keep their glass album art overlays consistently readable.
+
+**Text color shifting**: for interfaces where the background is brand-specific or highly chromatic, the glass blur desaturates and shifts colors behind it. Account for this in brand reviews -- run the glass effect over the full range of content it will actually appear over, not just placeholder imagery.
 
 ## Platform Implementation
 
@@ -355,6 +361,8 @@ Box(
 
 Soft extruded surfaces. Elements appear to emerge from or press into the background. Achieved through dual shadows: one light from upper-left, one dark from lower-right. Background and element colors match closely. The result is tactile and dimensional without explicit borders.
 
+In 2026, pure neumorphism has evolved into **Claymorphism** -- the same dual-shadow approach but with an added inner glow that makes elements appear slightly inflated, like soft clay or silicone. This subtle addition improves perceived affordance without meaningfully impacting accessibility. Apply it selectively to high-touch interactive elements (buttons, toggles, knobs) rather than background surfaces.
+
 **When to use**: Health and wellness, audio and music apps, any UI where a tactile, physical feel serves the content. Use sparingly -- it does not scale to information-dense layouts. Accessible neumorphism (Soft UI) maintains contrast standards; classic neumorphism does not.
 
 ## Token Modifications
@@ -369,6 +377,9 @@ shadow/neumorphic-raised-dark:     4px  4px 8px rgba(0,0,0,0.25)
 shadow/neumorphic-inset-light:  inset -2px -2px 6px rgba(255,255,255,0.7)
 shadow/neumorphic-inset-dark:   inset  2px  2px 6px rgba(0,0,0,0.2)
 
+// Claymorphism addition
+shadow/clay-glow: inset 0 1px 4px rgba(255,255,255,0.5)
+
 radius: generous — 16-24px on interactive elements
 border: none
 typography: medium weight, same-color or slightly lighter/darker than bg
@@ -377,6 +388,8 @@ typography: medium weight, same-color or slightly lighter/darker than bg
 ## Component Rules
 
 Buttons are raised by default, inset on press. Sliders use inset track with raised thumb. Icons are subtle, same-hue as background. No borders -- depth is all shadow. Active/selected states use inset shadow to show the element being pressed in. Color must be used carefully for contrast given the tight background-to-element color relationship: text must pass 4.5:1 against the background.
+
+WCAG contrast is the primary failure mode for this style. Run every text/background combination through a contrast checker before shipping. The monochromatic palette that makes neumorphism look good is the same thing that makes it fail accessibility checks.
 
 ## Platform Implementation
 
@@ -391,10 +404,64 @@ struct NeumorphicSurface: ViewModifier {
             .shadow(color: Color.black.opacity(0.2), radius: 8, x: 4, y: 4)
     }
 }
+
+// Claymorphism variant with inner glow
+struct ClayButton: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(Color(hex: "E4EBF5"))
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: Color.white.opacity(0.7), radius: 8, x: -4, y: -4)
+            .shadow(color: Color.black.opacity(0.2), radius: 8, x: 4, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.5), Color.clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+    }
+}
 ```
 
 **Android / Compose**
-Achieve with `drawBehind` for dual shadow rendering. Compose's `shadow()` modifier supports a single elevation shadow only -- dual shadows require custom `Canvas` drawing.
+Compose's `shadow()` modifier supports a single elevation shadow only -- dual shadows require custom `Canvas` drawing via `drawBehind`:
+
+```kotlin
+fun Modifier.neumorphic(
+    backgroundColor: Color = Color(0xFFE4EBF5),
+    cornerRadius: Dp = 16.dp
+): Modifier = this.drawBehind {
+    val radiusPx = cornerRadius.toPx()
+
+    // Dark shadow (lower-right)
+    drawRoundRect(
+        color = Color.Black.copy(alpha = 0.2f),
+        topLeft = Offset(4.dp.toPx(), 4.dp.toPx()),
+        size = size,
+        cornerRadius = CornerRadius(radiusPx),
+        blendMode = BlendMode.Multiply
+    )
+    // Light shadow (upper-left)
+    drawRoundRect(
+        color = Color.White.copy(alpha = 0.7f),
+        topLeft = Offset(-4.dp.toPx(), -4.dp.toPx()),
+        size = size,
+        cornerRadius = CornerRadius(radiusPx),
+        blendMode = BlendMode.Screen
+    )
+    // Base fill
+    drawRoundRect(
+        color = backgroundColor,
+        size = size,
+        cornerRadius = CornerRadius(radiusPx)
+    )
+}
+```
 
 **Web**
 ```css
@@ -409,6 +476,16 @@ Achieve with `drawBehind` for dual shadow rendering. Compose's `shadow()` modifi
   box-shadow:
     inset -2px -2px 6px rgba(255,255,255,0.7),
     inset  2px  2px 6px rgba(0,0,0,0.2);
+}
+
+/* Claymorphism variant */
+.clay {
+  background: #E4EBF5;
+  border-radius: 20px;
+  box-shadow:
+    -4px -4px 8px rgba(255,255,255,0.7),
+     4px  4px 8px rgba(0,0,0,0.2),
+    inset 0 1px 4px rgba(255,255,255,0.5); /* inner glow */
 }
 ```
 
@@ -604,8 +681,11 @@ Modular card-based layout. Content organized into a grid of variably-sized recta
 ## Token Modifications
 
 ```
-radius: generous and consistent
-  card: 24-32px (all cards the same radius)
+radius: 16-32px is the 2026 standard -- "organic modularity"
+  card: 20-24px for standard cells
+  featured: 28-32px for large hero cells
+  All cards must share the same radius family -- mixing tight and generous radius
+  within the same grid breaks visual cohesion.
 
 spacing/grid-gap:  16-20px between cells
 spacing/cell-pad:  24-32px inner card padding
@@ -619,6 +699,12 @@ color/semantic/surface — mild variation between cells for visual rhythm:
 ## Component Rules
 
 Every cell is a card. All cards share the same border radius. Cards contain a single content type: one metric, one visual, one action. Never mix content types inside one cell. The featured cell (the large one) gets the brand color. Support for spanning: 1x1, 2x1, 1x2, 2x2, 3x1. Grid is always consistent -- cells align to the same column tracks.
+
+Visual hierarchy is encoded in size: larger cells signal more important content. If every cell is the same size, you've built a regular grid with rounded corners -- not a bento. The largest cell should contain the highest-value information for the context.
+
+**Accessibility -- source order matters.** CSS Grid allows placing a box anywhere visually, which makes it easy to create layouts where the DOM order is totally disconnected from the visual reading order. Screen readers follow DOM order, not visual order. Write HTML in the logical hierarchy the information requires, then use `grid-column`/`grid-row` to position cells visually. Never reorder cells purely for visual reasons if it inverts the logical reading sequence. Every cell should be wrapped in appropriate semantic elements: `<article>` for self-contained content, `<section aria-labelledby="...">` for functional regions. Every interactive cell needs a visible, high-contrast focus indicator.
+
+**Limit visible cells.** More than 12-15 cells visible simultaneously destroys the organizational benefit. When everything competes for attention, nothing wins. Paginate, collapse, or truncate rather than cramming.
 
 ## Platform Implementation
 
@@ -643,6 +729,8 @@ LazyVGrid(
 `LazyVerticalGrid` with `GridCells.Fixed(2)`. For spanning, use `item(span = { GridItemSpan(maxLineSpan) })`.
 
 **Web**
+CSS subgrid (widely supported 2024+) is the correct tool for aligned content across cells:
+
 ```css
 .bento-grid {
   display: grid;
@@ -650,11 +738,41 @@ LazyVGrid(
   grid-template-rows: auto;
   gap: 16px;
 }
+
+/* Featured cell spanning */
 .bento-featured {
   grid-column: span 2;
   grid-row: span 2;
 }
+
+/* Subgrid for internal alignment across cards */
+.bento-cell {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 2; /* inherit parent tracks */
+}
+
+/* Responsive: collapse to single column on narrow screens */
+@media (max-width: 640px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .bento-featured {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}
+
+/* Micro-interaction: lift on hover */
+.bento-cell {
+  transition: transform 0.2s ease-out;
+}
+.bento-cell:hover {
+  transform: translateY(-4px);
+}
 ```
+
+**Mobile responsive note**: size hierarchy that communicates importance on wide screens collapses on mobile. Decide explicitly which cells maintain prominence at smaller breakpoints -- don't let the grid degrade to identically-sized blocks by accident.
 
 ---
 

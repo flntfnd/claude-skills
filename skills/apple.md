@@ -502,6 +502,10 @@ Tinting everything: tint is for semantic meaning. If everything is tinted, nothi
 
 Hardcoded animation values: magic numbers in `.animation(.spring(response: 0.3, dampingFraction: 0.6))` scattered throughout views. All values go in `Motion` tokens.
 
+Text on top of other text: floating glass controls positioned over content text create a legibility collision. iOS 26's native apps have been criticised for this. If a glass control overlaps readable content, either move the control or add a scrim layer between them.
+
+Motion overload: the glass material has its own built-in physics. Adding further scroll animations, parallax, and shimmer effects on top creates an interface that feels restless and competes for attention with the content it's supposed to serve.
+
 ---
 
 # Accessibility
@@ -509,11 +513,13 @@ Hardcoded animation values: magic numbers in `.animation(.spring(response: 0.3, 
 The system handles a lot automatically. Don't fight it.
 
 Reduced Transparency: system increases frosting for clarity. Glass falls back gracefully.
-Increased Contrast: system adds stark colors and borders.
-Reduced Motion: minimize or eliminate animations. Use opacity transitions.
+Increased Contrast: system adds stark colors, borders, and higher-contrast backgrounds to glass elements.
+Reduced Motion: minimize or eliminate animations. Use opacity transitions. Liquid Glass disables elastic interactions automatically.
 Dynamic Type: all text must scale. No fixed-height containers that truncate text.
 VoiceOver: all interactive elements need accessibility labels. Glass buttons need explicit labels.
-Touch targets: 44x44pt minimum. Always.
+Touch targets: 44x44pt minimum. Always. Do not reduce tap areas to fit a visually tighter glass composition.
+
+The three system adaptations above fire automatically when users enable them. Always test with each one active. The reduced transparency fallback is the most commonly missed -- your glass UI must still communicate hierarchy and depth without the translucency effect.
 
 ```swift
 @Environment(\.accessibilityReduceTransparency) var reduceTransparency
@@ -525,6 +531,8 @@ Contrast ratios:
 - Normal text: 4.5:1
 - Large text: 3:1
 - Interactive elements: 3:1
+
+These ratios must be verified **with the glass blur applied** against the actual content behind the glass, not against the glass fill color alone. The blur can significantly reduce effective contrast depending on what's beneath it -- test against the worst-case background your content will appear over.
 
 ---
 
@@ -637,6 +645,13 @@ Use `.identity` for conditional glass toggling, not conditional view existence. 
 
 Don't run continuous animations on glass surfaces. Real-time lensing plus continuous animation is a thermal and battery problem on older hardware.
 
-Test on iPhone 11-13. If it runs well there, it runs well everywhere.
+**Liquid Glass is GPU-intensive.** Apple's own developer guidance flags this explicitly. Do not apply the effect inside:
+- Nested views (glass inside glass containers)
+- High-frequency scrollable areas
+- `List` or `LazyVStack` rows
+
+Reserve Liquid Glass for static, top-level components: tab bars, toolbars, floating controls, sheets. Anything that's always visible and rarely redrawn. This is Apple's architectural intent -- Liquid Glass is a layout-layer decision, not a surface decoration applied everywhere. Apps in Apple's developer gallery that succeeded were the ones that moved navigation to the bottom, extended content behind glass chrome, and used standard system controls rather than custom-painted replacements.
+
+Test on iPhone 11-13. If it runs well there, it runs well everywhere. Older devices fall back to frosted glass when the full lensing effect exceeds thermal budget -- this is expected behavior, not a bug to fix.
 
 Profile with Instruments. Watch GPU usage and thermal state.
