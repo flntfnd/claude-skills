@@ -1,22 +1,54 @@
-# DESIGN-systems.md
+# FIGMA.md
 Figma design systems for iOS, iPadOS, macOS, Android, and Web.
 Current as of 2026. Figma variables are the standard. Static styles are legacy.
 
-# Canvas Background
-Set the page canvas color to dark before building anything. White canvases cause eye strain and make light-mode designs impossible to evaluate accurately against the canvas.
+---
 
-In Figma: click an empty area of the canvas so nothing is selected. In the right panel, find the Background color swatch and set it to #1A1A1A. Do this on every page in the file before starting work.
+# STEP 0 — Before anything else: dark canvas
 
-# MCP
-All Figma work uses the Figma MCP server. Before creating or editing anything in Figma, connect to the MCP server and read the existing library. Use the actual components, variables, and tokens already published. Don't approximate, guess, or recreate things that already exist. If the library doesn't exist yet, build it via MCP from the token architecture defined below.
+This is not optional and not skippable. The canvas background must be dark before any frame, component, or token is created. Do this first. Verify it before proceeding.
 
-# Canvas Background
-Set the Figma canvas to dark before doing anything else. A white canvas burns eyes and makes dark mode designs impossible to evaluate accurately.
+**Via MCP / Plugin API:**
+```javascript
+// Run this on every page in the file
+figma.currentPage.backgrounds = [{
+  type: 'SOLID',
+  color: { r: 0.118, g: 0.118, b: 0.118 },  // #1E1E1E
+  opacity: 1
+}];
+```
 
-Right-click on an empty area of the canvas and select **Background color**. Set it to `#1E1E1E`. This is per-file and persists. Do this on every new Figma file before placing a single frame.
+**Manually if MCP doesn't support it:** Right-click on empty canvas → Background color → `#1E1E1E`. Do this on every page before creating content on that page.
 
-# Design Style
+**Verify:** The canvas surrounding all frames must be dark grey, not white. If it's white, stop and fix it.
+
+---
+
+# STEP 1 — MCP connection
+
+All Figma work uses the Figma MCP server. Before creating or editing anything, connect and read what already exists. Use published components, variables, and tokens already in the library. Don't approximate, guess, or recreate things that exist.
+
+If an iOS app already exists: the token names in Figma must match the token names in the Swift code exactly. Read `~/.claude/skills/APPLE.md` to get the existing token architecture. Use those names. Do not invent new names that diverge from what's already in code.
+
+If the library doesn't exist yet: build it from the token architecture defined below.
+
+---
+
+# STEP 2 — Design style
+
 Before building any tokens or components, read `~/.claude/skills/STYLES.md` and confirm the style for the project. The style determines how tokens are populated. The infrastructure in this file stays constant across styles -- the values change based on style selection.
+
+---
+
+# NO EMPTY PAGES
+
+Pages are populated immediately when created. A page is never created as a placeholder to fill later. The workflow is:
+
+1. Create page
+2. Populate it fully
+3. Move to the next page
+
+If you create a 🎨 Tokens page, the variable collections go on it before you touch the 🎛 Components page. If you create a 🎛 Components page, the atomic components go on it before you touch anything else. An empty page in the Figma file is a failure state, not a step in the process.
 
 ---
 
@@ -53,6 +85,8 @@ Page: 🌐 Web              — platform screens
 Page: 🚢 Handoff          — engineering-ready specs
 Page: 🗄 Archive          — deprecated components (don't delete, archive)
 ```
+
+Only create platform pages for platforms the project actually targets. If the project is iOS only, don't create an Android page. If it targets iOS and Android, both platform pages must be populated -- not just one. A platform page that exists in the file must have content.
 
 Keep components and tokens in the same file. Splitting into separate libraries is for enterprise multi-brand systems only. Over-splitting creates maintenance overhead that kills adoption.
 
@@ -398,24 +432,27 @@ Set preferred instances on slots to guide designers toward the correct component
 
 ## Interactive Components
 
-Every stateful component must be interactive. This means prototype interactions built into the component set, not linked between separate frames.
+Every stateful component is interactive. Not "should be" -- is. A component page with static variants and no prototype connections is incomplete. Build interactions while building the component, not after.
 
-Setup pattern for a button:
+**Every component with more than one state must have these prototype connections wired before it's considered done:**
 
-1. Create component set with all state variants
-2. In the Default variant: add prototype connection to Hover variant on `Mouse enter`, `Change to`
-3. In the Hover variant: add `Mouse leave` back to Default, `Mouse down` to Pressed
-4. In the Pressed variant: add `Mouse up` back to Hover
-5. Any instance placed in a prototype inherits these interactions automatically
+Button example -- wire this in every file:
 
-Result: you never wire button states frame-to-frame again. One interactive component, every prototype.
+1. Create component set with all state variants (Default, Hover, Pressed, Disabled, Focus)
+2. Default → `Mouse enter` → Change to Hover
+3. Hover → `Mouse leave` → Change to Default
+4. Hover → `Mouse down` → Change to Pressed
+5. Pressed → `Mouse up` → Change to Hover
+6. Any instance placed in any prototype frame inherits all of this automatically
 
-Same pattern for:
-- Toggles and checkboxes (On click, Change to)
-- Accordions (On click, expand/collapse variants)
-- Dropdown menus (On click, show/hide overlay)
-- Form inputs (On focus, On blur)
-- Navigation tabs (On click, active state variant)
+Same mandatory wiring for:
+- **Toggles / checkboxes**: `On click` → Change to opposite checked state
+- **Accordions**: `On click` → Change to expanded variant, `On click` again → collapsed
+- **Dropdown / select**: `On click` → Change to open state variant
+- **Form inputs**: `On focus` → Change to focused variant, `On blur` → Change to default
+- **Navigation tabs**: `On click` → Change to active variant
+
+A component is not complete until it is interactive. If you've created a component set and haven't wired the prototype connections, the step is not done. Do not move to the next component until interactions are wired.
 
 ## Variables in Prototypes
 
@@ -563,34 +600,40 @@ Inconsistent light angle across components. Pick one angle for the file (135-145
 
 ## Order of Operations
 
-Build in this order. Do not skip steps or reorder.
+Build in this order. Each step is complete before the next step starts. A step is complete when the content exists in Figma, not when the page has been created.
 
 **1. Extract brand values**
-Before opening Figma, answer: primary color, neutral palette, brand typeface, voice and tone. These become the primitives.
+Before opening Figma, answer: primary color, neutral palette, brand typeface, voice and tone. If an iOS/Android app already exists, read `~/.claude/skills/APPLE.md` or `~/.claude/skills/ANDROID.md` and extract the existing token names. Use those names exactly.
 
-**2. Build primitive tokens**
-Create the Primitives variable collection. Define the full color ramp (50-950 for each hue), spacing scale, radius scale, and shadow values. No components yet. No screens.
+**2. Build primitive tokens — populate now, not later**
+Create the Primitives variable collection. Define the full color ramp (50-950 for each hue), spacing scale, radius scale, and shadow values. The 🎨 Tokens page is not done until these values are visible in Figma. No components until this is complete.
 
-**3. Build semantic tokens**
-Create the Semantic Color collection with Light and Dark modes. Alias every semantic token to a primitive. Every background, surface, text, border, and interactive color role gets defined here.
+**3. Build semantic tokens — populate now, not later**
+Create the Semantic Color collection with Light and Dark modes. Alias every semantic token to a primitive. Every background, surface, text, border, and interactive color role gets defined here. If an existing codebase uses `Color.Semantic.Background.primary`, the Figma token is `color/semantic/background/primary` -- same hierarchy, same name.
 
-**4. Define typography**
-Create the Typography variable collection. Build text styles that reference the typography variables.
+**4. Define typography — populate now**
+Create the Typography variable collection. Build text styles that reference the typography variables. The Typography page shows all text styles rendered, not just variable names.
 
-**5. Define spacing and radius**
-Number variables. Text styles and components reference these.
+**5. Define spacing and radius — populate now**
+Number variables. Text styles and components reference these. Document them visually on the Tokens page.
 
-**6. Build atomic components**
-Button, input, checkbox, toggle, radio, badge, chip, avatar, icon button. These are the atoms. Every atom gets all states and uses only semantic tokens.
+**6. Build atomic components — populate now, interactive on creation**
+Button, input, checkbox, toggle, radio, badge, chip, avatar, icon button. Every atom: all states, semantic token bindings, interactive prototype connections wired. The 🎛 Components page is not done until atoms exist. If you have created the Components page and it is empty, you have not done step 6 yet. Do step 6 before continuing.
 
-**7. Build molecular components**
-List rows, cards, nav bars, tab bars, modals, sheets, tooltips. Assembled from atoms.
+**7. Build molecular components — populate now, interactive on creation**
+List rows, cards, nav bars, tab bars, modals, sheets, tooltips. Assembled from atoms. Every molecule with interactive states gets prototype connections wired on creation.
 
 **8. Build page patterns**
 Navigation shells, screen templates, common layout patterns.
 
-**9. Build screens last**
+**9. Build screens — all platforms, minimum screen set per platform**
 Actual product screens use instances of patterns, which use instances of molecules, which use instances of atoms. Nothing is drawn freehand on a screen.
+
+Every platform specified in the project must have screens. If the project targets iOS and Android, both the 📱 iOS / iPadOS page and the 🤖 Android page must be populated. A page that contains only one screen type (e.g. login only) is not a complete platform page.
+
+Minimum per platform: authentication screens, home/main content (default + empty + error + loading), detail view, settings/profile, navigation shell.
+
+Every screen in both light and dark mode before the step is complete.
 
 ## Platform Variants
 
@@ -637,17 +680,35 @@ Map what you found to a structured token system. Name things semantically, not b
 
 If you found `#6750A4` on every primary button, that's not `purple-500`, that's `color/semantic/interactive/primary`.
 
-Build the variable collections in this order: primitives, then semantic tokens aliasing those primitives.
+**If an existing iOS or Android codebase exists:** read `~/.claude/skills/APPLE.md` and/or `~/.claude/skills/ANDROID.md` for the token names already in use in code. The Figma token names must match those names exactly. Do not create token names that diverge from the existing implementation -- mismatched names create a permanent gap between design and code that has to be manually bridged on every handoff.
+
+Build the variable collections in this order: primitives, then semantic tokens aliasing those primitives. Populate the 🎨 Tokens page completely before moving to components. An empty Tokens page is not a completed step.
 
 ## Step 4: Build Components Against the Tokens
 
-Recreate every component you found, but build it correctly this time: Auto Layout, variable bindings, all states, interactive.
+Recreate every component you found, but build it correctly: Auto Layout, variable bindings, all states, interactive prototype connections wired.
 
-Start with atoms. Don't touch screens until atoms are done.
+Start with atoms. Don't touch screens until atoms are done. A component set with variants but no prototype connections is not complete. Wire interactions on creation.
 
-## Step 5: Rebuild Screens Using Components
+The 🎛 Components page must contain actual components when you move on. If it's empty, step 4 is not finished.
 
-Recreate key screens using instances of your new components. This tests the system. Every hardcoded value you find means a token is missing.
+## Step 5: Rebuild Screens — all platforms, minimum screen set
+
+"Key screens" means every platform in the project gets a representative screen set. Covering one platform and calling the step done is not acceptable. Covering only login screens is not acceptable.
+
+**Every platform page in the file must have screens before this step is complete.** If the project targets iOS and Android, both the 📱 iOS / iPadOS page and the 🤖 Android page must have screens. A page that exists but contains only one screen type (e.g. login only) is not a complete platform page.
+
+**Minimum screen set per platform:**
+
+- **Authentication** — login, signup, forgot password, verification
+- **Home / main content** — default state, loading state, empty state, error state
+- **Detail** — item detail view with all content variants (full, partial, long text, short text)
+- **Settings / profile** — user settings or profile page
+- **Navigation** — the nav shell in each of its states
+
+Every screen must be in both light and dark mode before the step is complete. Every screen must use component instances, not freehand drawing.
+
+Every hardcoded value found during this step means a token is missing.
 
 ## Useful Plugins for Auditing
 

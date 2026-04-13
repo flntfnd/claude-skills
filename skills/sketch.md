@@ -2,51 +2,59 @@
 Sketch design systems for iOS, iPadOS, macOS, Android, and Web.
 Requires Sketch 2025.2.4 or later. Direct download from sketch.com only -- not Mac App Store.
 
-# Canvas Background
-Set the canvas color to dark before building anything. White canvases cause eye strain and make it impossible to accurately evaluate light-mode designs.
+---
 
-In Sketch: go to **View > Canvas > Canvas Color** and set it to #1A1A1A. This applies per document. Set it immediately on opening or creating any file. Individual artboards can also have their background color set in the Inspector -- set those to #1E1E1E or transparent depending on whether the artboard background should appear in exports.
+# STEP 0 — Before anything else: dark canvas
+
+This is not optional and not skippable. The canvas background must be dark before any Artboard, Symbol, or token is created.
+
+**Via MCP (run_code):**
+```javascript
+const document = context.document;
+const page = document.currentPage();
+page.changeCanvasColorToColor(NSColor.colorWithSRGBRed_green_blue_alpha(0.118, 0.118, 0.118, 1.0));
+```
+
+**Manually:** File > Document Settings → Canvas Color → `#1E1E1E`.
+
+**Individual Artboard backgrounds:** select each Artboard → Inspector → Background Color → `#1E1E1E` (or transparent if the artboard background should not appear in exports).
+
+**Verify:** The canvas surrounding all Artboards must be dark grey, not white. If it's white, stop and fix it before proceeding.
 
 ---
 
-# MCP Server
+# STEP 1 — MCP Server
 
-All Sketch work uses the Sketch MCP server. The MCP server must be running in Sketch before any AI work begins.
+All Sketch work uses the Sketch MCP server. The server must be running before any AI work begins.
 
-## Starting the Server
+**Start:** In Sketch, press `⌘K` → type "MCP" → choose **Start MCP Server**. Allow local network access when macOS prompts.
 
-In Sketch: press `⌘K` to open the Command Bar, type "MCP", choose **Start MCP Server**. Allow local network access when macOS prompts. A confirmation appears at the bottom of the document showing the server address and port.
-
-Alternatively: **Settings > General > MCP Server** to toggle.
-
-## Connecting Claude Code
-
+**Connect:**
 ```bash
 claude mcp add --transport http sketch http://localhost:31126/mcp
-claude mcp get sketch
 ```
 
-The server runs at `http://localhost:31126/mcp`. It is local-only and cannot be accessed remotely. The server is off by default.
+Before creating or editing anything, read the existing document first. Use `get_selection_as_image` on relevant frames and `run_code` to inspect the Symbol library and Color Variables. Never create parallel systems next to existing ones.
 
-## How the MCP Server Works
+If an iOS app already exists: the token names in Sketch must match the token names in the Swift code exactly. Read `~/.claude/skills/APPLE.md` to get the existing token architecture. Use those names. Do not invent new names that diverge from what's in code.
 
-Sketch's MCP server exposes two tools:
+---
 
-**`get_selection_as_image`**: captures an image of the current Sketch selection and returns it for analysis. Use this to inspect existing designs, audit component structures, or reference a frame before making changes.
+# STEP 2 — Design style
 
-**`run_code`**: executes SketchAPI JavaScript written by the AI to complete tasks. This is the primary tool for creating, modifying, and querying Sketch documents. It has access to the full SketchAPI -- the same API available to Sketch plugins.
+Before building any Symbols or Styles, confirm the design style for the project. Read `~/.claude/skills/STYLES.md` for token values and `~/.claude/skills/SKETCH.md` for Sketch-specific implementations.
 
-Before creating or editing anything in Sketch via MCP, read the existing document first using `get_selection_as_image` on the relevant frames and `run_code` to inspect the Symbol library and Color Variables. Never create parallel systems next to existing ones.
+---
 
-## Canvas Background
+# NO EMPTY PAGES
 
-Set the canvas to dark before doing anything else. White canvas burns eyes and makes dark mode designs impossible to evaluate accurately.
+Pages are populated immediately when created. A page is never created as a placeholder to fill later.
 
-Go to **File > Document Settings** and set Canvas Color to `#1E1E1E`. This is per-document and persists with the file. Do this on every new Sketch document before placing a single Artboard.
+1. Create page
+2. Populate it fully
+3. Move to the next page
 
-## Design Style
-
-Before building any Symbols or Styles, confirm the design style for the project. Read `~/.claude/skills/SKETCH.md` to get Sketch-specific implementation for each style.
+If you create a 🎨 Tokens page, the Color Variables and Tokens Studio sets go on it before you touch 🎛 Symbols. If you create a 🎛 Symbols page, atomic Symbols go on it before anything else. An empty page in the Sketch document is a failure state, not a step in the process.
 
 ---
 
@@ -90,6 +98,8 @@ Page: 🌐 Web              — platform screens
 Page: 🚢 Handoff          — engineering-ready specs
 Page: 🗄 Archive          — deprecated Symbols (never delete, archive)
 ```
+
+Only create platform pages for platforms the project actually targets. If the project is iOS only, don't create an Android page. If it targets iOS and Android, both platform pages must be populated -- not just one. A platform page that exists in the file must have content.
 
 Naming convention for Symbol Masters uses `/` as hierarchy separator. Sketch renders this as nested folders in the Insert panel:
 
@@ -363,23 +373,31 @@ Wrap the full layer stack into a Symbol. Expose overrides for:
 
 ## Order of Operations
 
-1. **Define brand values**: primary color, neutral palette, typeface. These become primitives.
+Each step is complete when the content exists in Sketch, not when the page has been created. Do not move to the next step until the current step is done.
 
-2. **Set up Color Variables**: primitives first, then semantic aliases. Both light and dark values for every semantic variable.
+1. **Define brand values** — primary color, neutral palette, typeface. If an iOS or Android app already exists, read `~/.claude/skills/APPLE.md` or `~/.claude/skills/ANDROID.md` and extract the existing token names. Use those names exactly in Sketch. Do not invent names that diverge from what's in code.
 
-3. **Install Tokens Studio**: set up token sets for spacing, radius, typography sizes, and motion.
+2. **Set up Color Variables — populate now** — primitives first, then semantic aliases. Both light and dark values for every semantic variable. The 🎨 Tokens page is not done until these variables exist and are documented. No Symbols until this step is complete.
 
-4. **Create Text Styles**: one per semantic role, referencing semantic Color Variables for text color.
+3. **Install Tokens Studio — populate now** — set up token sets for spacing, radius, typography sizes, and motion. Apply the token values. An empty Tokens Studio panel is not a completed step.
 
-5. **Create Layer Styles**: for common fills, borders, and shadows that repeat across components.
+4. **Create Text Styles — populate now** — one per semantic role, referencing semantic Color Variables for text color. Every text style defined and named before moving on.
 
-6. **Build atomic Symbols**: Button, Input, Checkbox, Toggle, Badge, Chip, Icon Button. Every Symbol gets all state variants. Use Color Variables and Text Styles throughout -- no hardcoded values.
+5. **Create Layer Styles** — for common fills, borders, and shadows that repeat across components.
 
-7. **Build molecular Symbols**: List Rows, Cards, Nav Bars, Tab Bars, Modals, Sheets. Assembled from atomic Symbols using nested overrides.
+6. **Build atomic Symbols — populate now, all states on creation** — Button, Input, Checkbox, Toggle, Badge, Chip, Icon Button. Every Symbol gets all state variants created immediately. Use Color Variables and Text Styles throughout -- no hardcoded values. The 🎛 Symbols page is not done until atomic Symbols exist on it. If it's empty, step 6 is not finished.
 
-8. **Build page patterns**: Navigation shells, screen templates, common layout patterns.
+7. **Build molecular Symbols — populate now** — List Rows, Cards, Nav Bars, Tab Bars, Modals, Sheets. Assembled from atomic Symbols using nested overrides.
 
-9. **Build screens last**: Using instances of pattern Symbols, which use instances of molecular Symbols, which use instances of atomic Symbols.
+8. **Build page patterns** — Navigation shells, screen templates, common layout patterns.
+
+9. **Build screens — all platforms, minimum screen set per platform** — Using instances of pattern Symbols, which use instances of molecular Symbols, which use instances of atomic Symbols. Nothing is drawn freehand on a screen.
+
+   Every platform specified in the project must have screens. If the project targets iOS and Android, both the 📱 iOS / iPadOS page and the 🤖 Android page must be populated. A page that contains only one screen (e.g. login only) is not a complete platform page.
+
+   Minimum per platform: authentication screens, home/main content (default + empty + error + loading), detail view, settings/profile, navigation shell.
+
+   Every screen in both light and dark mode before the step is considered complete.
 
 ---
 
@@ -410,13 +428,33 @@ Group what you find by role, not by appearance. `#6750A4` on every primary butto
 
 Build Color Variables and Tokens Studio token sets from the catalog. Name everything semantically. Populate light and dark mode values.
 
-## Step 4: Build Symbols
+**If an existing iOS or Android codebase exists:** read `~/.claude/skills/APPLE.md` or `~/.claude/skills/ANDROID.md` for the token names already in use in code. Use those exact names. `Semantic/Interactive/Primary` in Sketch must correspond to `Color.Semantic.Interactive.primary` in Swift, or whatever the existing naming convention is. Mismatched names create a permanent design-to-code gap.
+
+The 🎨 Tokens page must be fully populated before moving to Symbols. An empty page is not a completed step.
+
+## Step 4: Build Symbols — populate now, all states on creation
 
 Recreate every component correctly: proper naming, Smart Layout, overrides limited to what needs to be customized, Color Variables and Text Styles applied throughout. No hardcoded values.
 
-## Step 5: Rebuild Screens
+Build all state variants for every Symbol on creation. Start with atoms. The 🎛 Symbols page must contain actual Symbols before moving to screens. If it's empty, step 4 is not finished.
 
-Recreate key screens using Symbol instances. Every hardcoded value found during this step means a token or Color Variable is missing.
+## Step 5: Rebuild Screens — all platforms, minimum screen set
+
+"Key screens" means every platform in the project gets a representative screen set. Covering one platform and calling the step done is not acceptable. Covering only login screens is not acceptable.
+
+**Every platform specified in the project must have screens before this step is complete.** If the project targets iOS and Android, both the 📱 iOS / iPadOS page and the 🤖 Android page must have screens. If it targets web too, the 🌐 Web page must also have screens. A page that exists but contains only one screen type (e.g. login only) is not a complete platform page.
+
+**Minimum screen set per platform:**
+
+- **Authentication** — login, signup, forgot password, verification
+- **Home / main content** — default state, loading state, empty state, error state
+- **Detail** — item detail view with all content variants (full, partial, long text, short text)
+- **Settings / profile** — user settings or profile page
+- **Navigation** — the nav shell in each of its states (collapsed, expanded, active tab)
+
+Every screen above must be designed in both light and dark mode before the step is complete. Every screen must use Symbol instances, not freehand drawing.
+
+Every hardcoded value found during this step means a token or Color Variable is missing.
 
 ---
 
