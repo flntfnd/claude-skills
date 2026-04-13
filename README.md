@@ -68,6 +68,18 @@ Styles covered: Neo-Minimalism, Neo-Brutalism, Brutalism (Pure), Liquid Glass, G
 
 Cross-style rules at the bottom enforce that no style overrides platform conventions, accessibility requirements, dark mode, or state coverage.
 
+### `MOTION.md`
+
+Cross-platform animation deep spec. Read before writing any animation code on any platform.
+
+Covers physics foundations and the Disney principles applied to UI, spring vs ease curve decision logic, full duration and easing reference (83ms-700ms scale), and when not to animate. Per-platform: iOS/SwiftUI spring API cheat sheet, KeyframeAnimator, PhaseAnimator, `@Animatable` macro, `matchedGeometryEffect`; Android/Compose AnimationSpec, M3E MotionScheme, variable font animation, fling/decay; Windows/WinUI 3 SpringNaturalMotionAnimation, ConnectedAnimation, AnimatedIcon; Web layers: CSS native (compositor thread), CSS scroll-driven animations, GSAP (timeline, ScrollTrigger, SplitText, Flip, critical cleanup patterns), Lenis, Three.js + WebGL (fixed canvas architecture, scroll-driven camera, GLSL shaders, memory disposal). Cross-platform motion token table with equivalents for all four platforms.
+
+### `WEB.md`
+
+Modern web development. HTML5, CSS, TypeScript, Next.js App Router, Astro, Supabase integration, error handling, accessibility, security, browser compatibility.
+
+Covers semantic HTML, CSS custom properties and modern layout (container queries, cascade layers, native nesting, `:has()`, subgrid, scroll-driven animations), TypeScript patterns, Next.js 15 App Router (Server/Client Components, data fetching, Server Actions, Image, Metadata), Astro 5, Supabase integration with lane rules enforced in code (createBrowserClient/createServerClient, middleware session refresh, protected page pattern, Server Action mutations, no service_role on Vercel), error handling (error.tsx, not-found.tsx, typed Server Action returns with discriminated union, useActionState, Suspense, client ErrorBoundary), security headers and CSP, input validation with Zod, Baseline 2026 browser targets, cross-browser testing checklist, anti-patterns.
+
 ---
 
 ## Setup
@@ -82,7 +94,7 @@ cp CLAUDE.md ~/.claude/CLAUDE.md
 
 ```bash
 mkdir -p ~/.claude/skills
-cp AUDIT.md APPLE.md ANDROID.md WINDOWS.md FIGMA.md SKETCH.md STYLES.md ~/.claude/skills/
+cp AUDIT.md APPLE.md ANDROID.md WINDOWS.md FIGMA.md SKETCH.md STYLES.md MOTION.md WEB.md ~/.claude/skills/
 ```
 
 That's it. Claude Code reads CLAUDE.md automatically for every session. Skill files are loaded on demand based on the task context defined in the Skills section of CLAUDE.md.
@@ -94,12 +106,15 @@ That's it. Claude Code reads CLAUDE.md automatically for every session. Skill fi
 The Skills section in CLAUDE.md tells Claude Code which file to read before starting each type of task:
 
 ```
-When working on Apple platform UI → read APPLE.md
-When working on Android UI → read ANDROID.md
-When working on Windows / WinUI 3 → read WINDOWS.md
-When working in Sketch → read SKETCH.md
-When building or auditing a Figma design system → read FIGMA.md + STYLES.md
-When asked to audit anything → read AUDIT.md
+When working on Apple platform UI            → read APPLE.md
+When working on Android UI                   → read ANDROID.md
+When working on Windows / WinUI 3            → read WINDOWS.md
+When working on web (HTML/CSS/TS/Next/Astro) → read WEB.md
+When working on motion or animation          → read MOTION.md (any platform)
+When working in Sketch                       → read SKETCH.md
+When building or auditing a Figma file       → read FIGMA.md + STYLES.md
+When project has a specific visual style     → read STYLES.md
+When asked to audit anything                 → read AUDIT.md
 ```
 
 Skills are loaded on demand, not all at once, so they don't burn context on irrelevant content.
