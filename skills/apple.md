@@ -26,8 +26,6 @@ If you're applying glass to content, you're doing it wrong.
 
 `.identity` disables the effect entirely. Use it for conditional toggling without triggering layout recalculation.
 
-`.clear` requires all three conditions to be met before using it: the element sits over media-rich content, the content won't be harmed by a dimming layer, and the content above the glass is bold and bright. If any condition fails, use `.regular`.
-
 ## Core API
 
 ```swift
