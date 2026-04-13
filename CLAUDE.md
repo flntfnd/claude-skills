@@ -71,6 +71,8 @@ No third-party animation libraries when native APIs cover it. CSS animations, We
 
 Timing functions are named tokens, not magic cubic-bezier values inline. Physics-based motion (spring, inertia) is preferred over generic ease curves for interactive elements.
 
+Springs for interactive elements, ease curves for automated ones. When a user triggers the motion (tap, drag, swipe), use a spring -- it handles velocity continuity on interruption. When the system triggers the motion (loading, state change with no gesture), ease curves are appropriate. Never linear for UI transitions.
+
 If motion behavior isn't specified, ask. Don't invent it.
 
 # Design Fidelity
@@ -108,13 +110,15 @@ Conventional commit format: feat:, fix:, chore:, refactor:, docs:, test:, perf:
 Subject line describes what changed and why. No mention of Claude, AI, or code generation tools. Keep subject lines under 72 characters. Use the body when context is needed.
 
 # Skills
-When working in Sketch: read ~/.claude/skills/sketch.md before touching the document.
-When working on Apple platform UI: read ~/.claude/skills/apple.md before writing any view code.
-When working on Android UI: read ~/.claude/skills/android.md before writing any view code.
-When working on Windows / WinUI 3: read ~/.claude/skills/windows.md before writing any view code.
-When building or auditing a Figma design system: read ~/.claude/skills/figma.md and ~/.claude/skills/styles.md before starting.
-When working on motion or animation: read ~/.claude/skills/motion.md before writing any animation code.
-When asked to audit anything: read ~/.claude/skills/audit.md before starting.
+When working in Sketch: read ~/.claude/skills/SKETCH.md before touching the document. Start the Sketch MCP server first (⌘K → MCP → Start MCP Server in Sketch), then connect with: claude mcp add --transport http sketch http://localhost:31126/mcp
+
+When working on Apple platform UI: read ~/.claude/skills/APPLE.md before writing any view code.
+When working on Android UI: read ~/.claude/skills/ANDROID.md before writing any view code.
+When working on Windows / WinUI 3: read ~/.claude/skills/WINDOWS.md before writing any view code.
+When building or auditing a Figma design system: read ~/.claude/skills/FIGMA.md and ~/.claude/skills/STYLES.md before starting.
+When working on web (HTML/CSS/JS/TS/Next.js/Astro): read ~/.claude/skills/WEB.md before writing any web code.
+When working on motion or animation: read ~/.claude/skills/MOTION.md before writing any animation code.
+When asked to audit anything: read ~/.claude/skills/AUDIT.md before starting.
 
 # General
 - Comments are for complex code only. Don't narrate the obvious.
@@ -123,3 +127,5 @@ When asked to audit anything: read ~/.claude/skills/audit.md before starting.
 - One question at a time when something is ambiguous.
 - For tasks with independent parallel workstreams, propose a multi-agent breakdown before starting rather than executing sequentially.
 - When discussing UI layouts, component structure, or visual hierarchy, illustrate it in the terminal using ASCII or Unicode drawing characters. Don't describe what something looks like when you can show it.
+- Suggest /compact at logical task boundaries: after research is done and before implementation starts, after a milestone completes, after a debugging session ends. Never mid-implementation -- compacting while code is half-written loses variable names, file paths, and partial state that can't be easily reconstructed.
+- MCP servers consume context. Each MCP tool description burns tokens from the context window. Keep active MCPs under 10 per session. If context feels compressed, check which MCPs are loaded and disable unused ones via disabledMcpServers in the project settings.
