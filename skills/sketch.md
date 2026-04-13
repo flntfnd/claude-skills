@@ -10,12 +10,16 @@ This is not optional and not skippable. The canvas background must be dark befor
 
 **Via MCP (run_code):**
 ```javascript
+// Set canvas background via SketchAPI
 const document = context.document;
 const page = document.currentPage();
-page.changeCanvasColorToColor(NSColor.colorWithSRGBRed_green_blue_alpha(0.118, 0.118, 0.118, 1.0));
+
+// SketchAPI color object (RGBA, values 0-1)
+const darkGrey = MSColor.colorWithRed_green_blue_alpha(0.118, 0.118, 0.118, 1.0);
+page.setCanvasColor(darkGrey);
 ```
 
-**Manually:** File > Document Settings → Canvas Color → `#1E1E1E`.
+If `setCanvasColor` is unavailable in the current Sketch version, use Document Settings manually: **File > Document Settings → Canvas Color → `#1E1E1E`**. Verify before proceeding.
 
 **Individual Artboard backgrounds:** select each Artboard → Inspector → Background Color → `#1E1E1E` (or transparent if the artboard background should not appear in exports).
 
@@ -42,7 +46,7 @@ If an iOS app already exists: the token names in Sketch must match the token nam
 
 # STEP 2 — Design style
 
-Before building any Symbols or Styles, confirm the design style for the project. Read `~/.claude/skills/STYLES.md` for token values and `~/.claude/skills/SKETCH.md` for Sketch-specific implementations.
+Before building any Symbols or Styles, confirm the design style for the project. Read `~/.claude/skills/STYLES.md` for token values and visual style definitions. Sketch-specific implementations for each of the 14 styles are at the bottom of this file.
 
 ---
 
