@@ -10,17 +10,17 @@ Fork it. Strip what doesn't apply. Make it yours.
 ## Files
 
 ~/.claude/
-|-- CLAUDE.md        global config, loads on every session
+|-- CLAUDE.md
 `-- skills/
-    |-- APPLE.md     iOS / iPadOS / macOS (SwiftUI)
-    |-- ANDROID.md   Android (Jetpack Compose)
-    |-- WINDOWS.md   Windows (WinUI 3)
-    |-- WEB.md       Web (Next.js / Astro)
-    |-- MOTION.md    animation, all platforms
-    |-- FIGMA.md     Figma design systems
-    |-- SKETCH.md    Sketch design systems
-    |-- STYLES.md    14 visual styles, all platforms
-    `-- AUDIT.md     audit checklists
+    |-- APPLE.md
+    |-- ANDROID.md
+    |-- WINDOWS.md
+    |-- WEB.md
+    |-- MOTION.md
+    |-- FIGMA.md
+    |-- SKETCH.md
+    |-- STYLES.md
+    `-- AUDIT.md
 
 ### `CLAUDE.md`
 
