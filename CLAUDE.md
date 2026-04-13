@@ -108,14 +108,13 @@ Conventional commit format: feat:, fix:, chore:, refactor:, docs:, test:, perf:
 Subject line describes what changed and why. No mention of Claude, AI, or code generation tools. Keep subject lines under 72 characters. Use the body when context is needed.
 
 # Skills
-When working in Sketch: read ~/.claude/skills/SKETCH.md before touching the document. Start the Sketch MCP server first (⌘K → MCP → Start MCP Server in Sketch), then connect with: claude mcp add --transport http sketch http://localhost:31126/mcp
-
-When working on Apple platform UI: read ~/.claude/skills/APPLE.md before writing any view code.
-When working on Android UI: read ~/.claude/skills/ANDROID.md before writing any view code.
-When working on Windows / WinUI 3: read ~/.claude/skills/WINDOWS.md before writing any view code.
-When building or auditing a Figma design system: read ~/.claude/skills/FIGMA.md and ~/.claude/skills/STYLES.md before starting.
-When working on motion or animation: read ~/.claude/skills/MOTION.md before writing any animation code.
-When asked to audit anything: read ~/.claude/skills/AUDIT.md before starting.
+When working in Sketch: read ~/.claude/skills/sketch.md before touching the document.
+When working on Apple platform UI: read ~/.claude/skills/apple.md before writing any view code.
+When working on Android UI: read ~/.claude/skills/android.md before writing any view code.
+When working on Windows / WinUI 3: read ~/.claude/skills/windows.md before writing any view code.
+When building or auditing a Figma design system: read ~/.claude/skills/figma.md and ~/.claude/skills/styles.md before starting.
+When working on motion or animation: read ~/.claude/skills/motion.md before writing any animation code.
+When asked to audit anything: read ~/.claude/skills/audit.md before starting.
 
 # General
 - Comments are for complex code only. Don't narrate the obvious.
