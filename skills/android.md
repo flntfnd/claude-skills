@@ -17,7 +17,9 @@ Dynamic color (Material You) derives tones from the user's wallpaper. Support it
 
 ```kotlin
 // build.gradle
-implementation(platform("androidx.compose:compose-bom:2025.01.00"))
+// Always use the latest stable BOM -- check https://developer.android.com/jetpack/compose/bom/bom-mapping
+// Current stable as of early 2026: 2025.10.00 or later
+implementation(platform("androidx.compose:compose-bom:2025.10.00"))
 implementation("androidx.compose.material3:material3")
 
 // For M3E experimental APIs
