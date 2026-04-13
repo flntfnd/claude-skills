@@ -1,127 +1,101 @@
 # claude-skills
 
-A personal set of Claude Code skill files and a global CLAUDE.md built up over time to stop repeating myself. These files tell Claude Code how I work, what stack I use, what platforms I build for, and what good output looks like for each one.
+Claude Code skill files and a global CLAUDE.md. Built from the perspective of a seasoned design-engineer, with the goal of automating higher quality building within the human-designer > agentic programmer relationship.
 
-If you build native apps, design in Figma or Sketch, or work across multiple platforms, you might find something useful here. Fork it, strip out what doesn't apply, and make it yours.
+Fork it. Strip what doesn't apply. Make it yours.
+
 
 ---
 
-## What's in here
+## Files
 
 ### `CLAUDE.md`
 
-The global config file. Goes at `~/.claude/CLAUDE.md` so it applies to every Claude Code session. Covers:
-
-- Stack lane rules (Vercel / Railway / Supabase and what belongs in each)
-- Platform targets (iOS/iPadOS/macOS 26+, Android current stable, evergreen web)
-- Code generation rules (research before building, no legacy patterns, write it right the first time)
-- UI architecture (no hardcoded values, tokens everywhere)
-- Custom views and animation philosophy
-- Design fidelity (Figma-first, Claude implements not designs)
-- Privacy defaults
-- Audio thread rules for DSP work
-- Rust conventions
-- Testing philosophy
-- Commit format
-- Skills routing (which file to read for which task)
-- General behavior rules
-
-### `AUDIT.md`
-
-Checklists for code and UI audits. When asked to audit anything, Claude reads this first. Covers dead code, memory leaks, security, error handling, performance, deprecated APIs, and UI-specific checks including hardcoded values, design system coherence, and custom vs stock components.
+Global config. Lives at `~/.claude/CLAUDE.md` and loads automatically on every session. Sets stack lane rules, platform targets, code standards, UI architecture, animation philosophy, design fidelity requirements, privacy defaults, audio thread rules, Rust conventions, and skill routing. Everything else in this repo assumes this file is loaded.
 
 ### `APPLE.md`
 
-Native Apple platform development. iOS 26 / iPadOS 26 / macOS Tahoe 26. SwiftUI only -- no UIKit unless explicitly required.
+iOS 26 / iPadOS 26 / macOS Tahoe. SwiftUI only.
 
-Covers Liquid Glass (full native implementation with the correct API, parameters, and every known gotcha), SwiftUI semantic colors and custom token patterns, SF Pro variable font, spring animation tokens, NavigationStack / TabView / Sheet patterns, haptics, Reduce Motion, and performance.
+Full Liquid Glass implementation: all material variants, GlassEffectContainer, morphing, button styles, performance constraints (GPU-intensive, don't apply inside lists or scroll areas), accessibility adaptations. SwiftUI semantic color system, spring animation tokens, navigation patterns, haptics. Every known gotcha documented.
 
 ### `ANDROID.md`
 
-Native Android development. Jetpack Compose, Material 3 Expressive, current stable release.
+Jetpack Compose, Material 3 Expressive, current stable.
 
-Covers the M3E color role system, Roboto Flex variable font with weight animation, the spring-based MotionScheme (standard vs expressive), adaptive navigation that shifts between bottom bar / nav rail / drawer by window size, new M3E components (LoadingIndicator, ButtonGroup, FloatingToolbar), edge-to-edge, haptics, and recomposition performance.
+Color role system, Roboto Flex variable font with weight animation, spring-based MotionScheme, adaptive navigation (bottom bar / rail / drawer by window size), M3E components (LoadingIndicator, ButtonGroup, FloatingToolbar), edge-to-edge, haptics, recomposition performance.
 
 ### `WINDOWS.md`
 
-Native Windows development. WinUI 3 via Windows App SDK 1.8+. C# with XAML.
+WinUI 3 via Windows App SDK 1.8+. C# with XAML.
 
-Covers the Mica / Acrylic material system with correct surface assignments (most developers get this backwards), semantic ThemeResource brushes, Segoe UI Variable, Composition API animations, NavigationView adaptive modes, full XAML + C# for every control, x:Bind, AdaptiveTrigger for responsive layout, DPI scaling, Narrator / high contrast accessibility, and the XamlRoot ContentDialog gotcha.
-
-### `FIGMA.md`
-
-Figma design system workflow. Current as of 2026.
-
-Covers the three-tier token architecture (primitive / semantic / component), variable collections and modes, platform token name mapping (Figma names to SwiftUI / Compose / CSS equivalents), typography variables, Auto Layout, component architecture with Slots, interactive components for prototyping, variable-driven prototypes with conditionals, Liquid Glass in Figma (with every failure mode documented), building from scratch vs replicating an existing app, and dev handoff. Uses the Figma MCP server.
-
-### `SKETCH.md`
-
-Sketch design system workflow plus style implementations for all 14 visual styles.
-
-Covers the Sketch MCP server setup, Symbols vs Figma Components (full terminology map), Color Variables, Tokens Studio for non-color tokens, Smart Layout, Libraries, manual glass technique (Sketch has no native glass effect), building and replicating workflows, and dev handoff. The Sketch-specific implementation for every design style in STYLES.md is at the bottom of this file.
-
-### `STYLES.md`
-
-Visual design language specifications for all platforms. 14 styles, each with token values, component rules, and native implementation for iOS/SwiftUI, Android/Compose, and Web/CSS.
-
-Styles covered: Neo-Minimalism, Neo-Brutalism, Brutalism (Pure), Liquid Glass, Glassmorphism/Frosted, Neumorphism/Soft UI, Kinetic Typography, Futuristic/Sci-Fi, Bento Grid, Editorial/Structural, Organic/Biomorphic, Texture/Tactile, Y2K/Retro Computing, Calm/Anti-Distraction.
-
-Cross-style rules at the bottom enforce that no style overrides platform conventions, accessibility requirements, dark mode, or state coverage.
-
-### `MOTION.md`
-
-Cross-platform animation deep spec. Read before writing any animation code on any platform.
-
-Covers physics foundations and the Disney principles applied to UI, spring vs ease curve decision logic, full duration and easing reference (83ms-700ms scale), and when not to animate. Per-platform: iOS/SwiftUI spring API cheat sheet, KeyframeAnimator, PhaseAnimator, `@Animatable` macro, `matchedGeometryEffect`; Android/Compose AnimationSpec, M3E MotionScheme, variable font animation, fling/decay; Windows/WinUI 3 SpringNaturalMotionAnimation, ConnectedAnimation, AnimatedIcon; Web layers: CSS native (compositor thread), CSS scroll-driven animations, GSAP (timeline, ScrollTrigger, SplitText, Flip, critical cleanup patterns), Lenis, Three.js + WebGL (fixed canvas architecture, scroll-driven camera, GLSL shaders, memory disposal). Cross-platform motion token table with equivalents for all four platforms.
+Mica / Acrylic material system with correct surface assignments -- most developers get this backwards. Semantic ThemeResource brushes, Segoe UI Variable, Composition API animations, NavigationView adaptive modes, DPI scaling, full accessibility checklist (High Contrast, Narrator, keyboard-only), XamlRoot ContentDialog requirement.
 
 ### `WEB.md`
 
-Modern web development. HTML5, CSS, TypeScript, Next.js App Router, Astro, Supabase integration, error handling, accessibility, security, browser compatibility.
+HTML5, CSS, TypeScript, Next.js App Router, Astro, Supabase integration.
 
-Covers semantic HTML, CSS custom properties and modern layout (container queries, cascade layers, native nesting, `:has()`, subgrid, scroll-driven animations), TypeScript patterns, Next.js 15 App Router (Server/Client Components, data fetching, Server Actions, Image, Metadata), Astro 5, Supabase integration with lane rules enforced in code (createBrowserClient/createServerClient, middleware session refresh, protected page pattern, Server Action mutations, no service_role on Vercel), error handling (error.tsx, not-found.tsx, typed Server Action returns with discriminated union, useActionState, Suspense, client ErrorBoundary), security headers and CSP, input validation with Zod, Baseline 2026 browser targets, cross-browser testing checklist, anti-patterns.
+Modern CSS (container queries, cascade layers, nesting, `:has()`, subgrid, scroll-driven animations), Next.js 15 Server/Client Components, Server Actions with typed discriminated union returns, Supabase integration with stack lane rules enforced in code (no service_role on Vercel, middleware session refresh, RLS as the security layer), error handling patterns (error.tsx, not-found.tsx, useActionState, ErrorBoundary), security headers, CSP, Zod validation, Baseline 2026 targets.
+
+### `FIGMA.md`
+
+Figma design system workflow. Uses the Figma MCP server.
+
+Three-tier token architecture, variable collections and modes, platform token name mapping (Figma to SwiftUI / Compose / CSS), component architecture with Slots, interactive prototype wiring requirements, Liquid Glass implementation with every failure mode documented, building from scratch vs replicating an existing codebase, dev handoff. Dark canvas setup, no-empty-pages rules, and platform completeness requirements are all enforced as hard prerequisites.
+
+### `SKETCH.md`
+
+Sketch design system workflow. Uses the Sketch MCP server.
+
+Symbols vs Figma Components terminology map, Color Variables, Tokens Studio for non-color tokens, Smart Layout, Libraries, manual glass technique (Sketch has no native glass). Same structural rules as FIGMA.md: dark canvas first, populate pages before moving on, token names must mirror the codebase, all targeted platforms must have screens. Sketch-specific implementations for all 14 visual styles at the bottom.
+
+### `STYLES.md`
+
+14 visual design styles. Each has token modifications, component rules, and native implementation for iOS/SwiftUI, Android/Compose, and Web/CSS.
+
+Neo-Minimalism, Neo-Brutalism, Brutalism (Pure), Liquid Glass, Glassmorphism/Frosted, Neumorphism/Soft UI (with Claymorphism evolution and WCAG failure mode), Kinetic Typography, Futuristic/Sci-Fi, Bento Grid (with CSS subgrid and source-order accessibility), Editorial/Structural, Organic/Biomorphic, Texture/Tactile, Y2K/Retro Computing, Calm/Anti-Distraction. Critical failure modes documented where the style has known accessibility or usability problems.
+
+### `MOTION.md`
+
+Cross-platform animation deep spec. Read before writing animation code on any platform.
+
+Physics foundations, spring vs ease curve decision logic (springs for user-triggered, ease for system-triggered), duration scale (83ms-700ms), when not to animate. Per-platform: iOS/SwiftUI spring API, KeyframeAnimator, PhaseAnimator, `@Animatable`, `matchedGeometryEffect`; Android/Compose AnimationSpec, M3E MotionScheme, variable font animation; Windows SpringNaturalMotionAnimation, ConnectedAnimation; Web: CSS native (compositor thread), scroll-driven animations, GSAP (timeline, ScrollTrigger, SplitText, Flip, cleanup requirements), Lenis, Three.js + WebGL. Cross-platform motion token table.
+
+### `AUDIT.md`
+
+Audit checklists: code (dead code, memory leaks, security, error handling, performance, deprecated APIs), UI (hardcoded values, design system coherence, responsive logic, animation), audio thread (allocations, blocking calls, ObjC messaging, cross-thread comms), security (key exposure, RLS, JWT, PII in logs), design files (canvas background, empty pages, token population, token naming vs code, component completeness, interactive wiring, platform coverage, screen completeness), Rust (unwrap, error types, clones, unsafe blocks), Rust toolchain (clippy -D warnings, cargo audit, cargo deny, cargo test).
 
 ---
 
 ## Setup
 
-### Global config
-
 ```bash
 cp CLAUDE.md ~/.claude/CLAUDE.md
-```
-
-### Skill files
-
-```bash
 mkdir -p ~/.claude/skills
 cp AUDIT.md APPLE.md ANDROID.md WINDOWS.md FIGMA.md SKETCH.md STYLES.md MOTION.md WEB.md ~/.claude/skills/
 ```
 
-That's it. Claude Code reads CLAUDE.md automatically for every session. Skill files are loaded on demand based on the task context defined in the Skills section of CLAUDE.md.
+CLAUDE.md loads automatically. Skill files are read on demand -- they don't all load at once, so they don't burn context on irrelevant content.
 
 ---
 
-## How the skills routing works
-
-The Skills section in CLAUDE.md tells Claude Code which file to read before starting each type of task:
+## Routing
 
 ```
-When working on Apple platform UI            → read APPLE.md
-When working on Android UI                   → read ANDROID.md
-When working on Windows / WinUI 3            → read WINDOWS.md
-When working on web (HTML/CSS/TS/Next/Astro) → read WEB.md
-When working on motion or animation          → read MOTION.md (any platform)
-When working in Sketch                       → read SKETCH.md
-When building or auditing a Figma file       → read FIGMA.md + STYLES.md
-When project has a specific visual style     → read STYLES.md
-When asked to audit anything                 → read AUDIT.md
+Apple platform UI            → APPLE.md
+Android UI                   → ANDROID.md
+Windows / WinUI 3            → WINDOWS.md
+Web (HTML/CSS/TS/Next/Astro) → WEB.md
+Motion or animation          → MOTION.md  (any platform)
+Sketch                       → SKETCH.md
+Figma design system          → FIGMA.md + STYLES.md
+Project has a visual style   → STYLES.md
+Audit anything               → AUDIT.md
 ```
-
-Skills are loaded on demand, not all at once, so they don't burn context on irrelevant content.
 
 ---
 
-## My stack
+## Stack
 
 - **Frontend**: Vercel (Next.js, SSR, edge middleware)
 - **Backend**: Railway (API servers, workers, long-running processes)
@@ -130,30 +104,28 @@ Skills are loaded on demand, not all at once, so they don't burn context on irre
 - **Design**: Figma (primary), Sketch
 - **Languages**: Swift, Kotlin, C#, TypeScript, Rust
 
-If your stack is different, update the Lane Rules section in CLAUDE.md. Everything else transfers without changes.
+Stack is defined in CLAUDE.md. If yours is different, update the Lane Rules section. Everything else transfers.
 
 ---
 
-## Things worth noting
+## Notes
 
-**CLAUDE.md is opinionated.** It reflects how I actually work. The "write it correctly the first time" and "don't generate code you'd flag in an audit" rules sound obvious but make a real difference in output quality when stated explicitly.
+CLAUDE.md is opinionated and intentionally so. "Write it correctly the first time" sounds obvious. Stating it explicitly changes the output.
 
-**Platform targets are pinned.** iOS 26+, Android current stable, WinUI 3 / Windows App SDK 1.8+. If you need to support older versions, update the Platform Targets section.
+Platform targets are pinned to current: iOS 26+, Android stable, Windows App SDK 1.8+. Update Platform Targets if you need older support.
 
-**Design fidelity rule is firm.** Claude implements designs, it doesn't invent them. If a layout detail isn't specified, it asks rather than guessing. This matters a lot in practice -- the default behavior is to fill gaps with whatever looks plausible, which creates inconsistency you then have to clean up.
+Design fidelity is non-negotiable. Claude implements designs, it doesn't invent them. Without an explicit rule, the default behavior is to fill unspecified gaps with whatever looks plausible. That creates drift you have to clean up.
 
-**Liquid Glass has failure modes.** FIGMA.md documents every way the glass effect fails silently in Figma (fill at 100% opacity, background blur conflict, wrong layer order). Saved me a lot of debugging.
-
-**Sketch and Figma are separate workflows.** They have different concepts and SKETCH.md doesn't assume you know Figma. STYLES.md covers visual styles for all platforms in one place; SKETCH.md adds Sketch-specific implementation notes at the bottom.
+The design tool files (FIGMA.md, SKETCH.md) have hard enforcement rules built in: dark canvas before anything else, no empty pages, tokens populate before components, components exist before screens, all targeted platforms must have screens. These rules exist because every one of them reflects a real failure mode from actual usage.
 
 ---
 
 ## Contributing
 
-This is a personal config, not a framework. I'm not looking for PRs that change the opinions in CLAUDE.md -- those reflect my specific setup and workflow. But if you find a factual error in the platform specs (wrong API, outdated behavior, missing gotcha), open an issue and I'll look at it.
+Personal config, not a framework. Not looking for PRs that change the opinions in CLAUDE.md. If you find a factual error in a platform spec (wrong API, outdated behavior, missing gotcha), open an issue.
 
 ---
 
 ## License
 
-MIT. Use it however you want.
+MIT.
