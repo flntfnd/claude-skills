@@ -114,6 +114,7 @@ When working on Apple platform UI: read ~/.claude/skills/APPLE.md before writing
 When working on Android UI: read ~/.claude/skills/ANDROID.md before writing any view code.
 When working on Windows / WinUI 3: read ~/.claude/skills/WINDOWS.md before writing any view code.
 When building or auditing a Figma design system: read ~/.claude/skills/FIGMA.md and ~/.claude/skills/STYLES.md before starting.
+When working on motion or animation: read ~/.claude/skills/MOTION.md before writing any animation code.
 When asked to audit anything: read ~/.claude/skills/AUDIT.md before starting.
 
 # General
