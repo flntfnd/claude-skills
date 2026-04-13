@@ -67,7 +67,7 @@ Motion is a design decision. Spring parameters, easing curves, and durations don
 
 Every animation has a behavioral purpose. If it doesn't do anything meaningful, it doesn't belong.
 
-No third-party animation libraries when native APIs cover it. CSS animations, Web Animations API, SwiftUI animation modifiers, Jetpack Compose animate* APIs. Use the platform.
+No third-party animation libraries when native APIs cover it. CSS animations, Web Animations API, SwiftUI animation modifiers, Jetpack Compose animate* APIs. Use the platform. Exception: on web, GSAP is the documented standard for complex timeline choreography, scroll-driven experiences, and anything requiring multi-element coordination. Lenis for smooth scrolling. Three.js/WebGL for GPU-accelerated visual experiences. These are covered in MOTION.md.
 
 Timing functions are named tokens, not magic cubic-bezier values inline. Physics-based motion (spring, inertia) is preferred over generic ease curves for interactive elements.
 
@@ -117,14 +117,15 @@ When working on Android UI: read ~/.claude/skills/ANDROID.md before writing any 
 When working on Windows / WinUI 3: read ~/.claude/skills/WINDOWS.md before writing any view code.
 When building or auditing a Figma design system: read ~/.claude/skills/FIGMA.md and ~/.claude/skills/STYLES.md before starting.
 When working on web (HTML/CSS/JS/TS/Next.js/Astro): read ~/.claude/skills/WEB.md before writing any web code.
-When working on motion or animation: read ~/.claude/skills/MOTION.md before writing any animation code.
+When working on motion or animation (any platform): read ~/.claude/skills/MOTION.md before writing any animation code.
+When the project has a specific visual style (Neo-Brutalism, Glassmorphism, Bento Grid, etc.): read ~/.claude/skills/STYLES.md for token values and platform-specific implementation for that style.
 When asked to audit anything: read ~/.claude/skills/AUDIT.md before starting.
 
 # General
 - Comments are for complex code only. Don't narrate the obvious.
 - All CSS is custom. No Tailwind, no frameworks.
 - No em dashes.
-- One question at a time when something is ambiguous.
+- One question at a time when something is ambiguous. Exception: design tool work (Figma, Sketch) may require confirming up to three blocking questions before starting -- which platforms to target, whether an existing codebase exists, and which visual style to use. Ask all three upfront rather than discovering blockers mid-session.
 - For tasks with independent parallel workstreams, propose a multi-agent breakdown before starting rather than executing sequentially.
 - When discussing UI layouts, component structure, or visual hierarchy, illustrate it in the terminal using ASCII or Unicode drawing characters. Don't describe what something looks like when you can show it.
 - Suggest /compact at logical task boundaries: after research is done and before implementation starts, after a milestone completes, after a debugging session ends. Never mid-implementation -- compacting while code is half-written loses variable names, file paths, and partial state that can't be easily reconstructed.
