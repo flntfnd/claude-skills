@@ -9,6 +9,19 @@ Fork it. Strip what doesn't apply. Make it yours.
 
 ## Files
 
+~/.claude/
+├── CLAUDE.md                 ← global config, loads on every session
+└── skills/
+    ├── apple.md              ← iOS / iPadOS / macOS  (SwiftUI)
+    ├── android.md            ← Android               (Jetpack Compose)
+    ├── windows.md            ← Windows               (WinUI 3)
+    ├── web.md                ← Web                   (Next.js / Astro)
+    ├── motion.md             ← animation             (all platforms)
+    ├── figma.md              ← Figma design systems
+    ├── sketch.md             ← Sketch design systems
+    ├── styles.md             ← 14 visual styles      (all platforms)
+    └── audit.md              ← audit checklists      (code / UI / security)
+
 ### `CLAUDE.md`
 
 Global config. Lives at `~/.claude/CLAUDE.md` and loads automatically on every session. Sets stack lane rules, platform targets, code standards, UI architecture, animation philosophy, design fidelity requirements, privacy defaults, audio thread rules, Rust conventions, and skill routing. Everything else in this repo assumes this file is loaded.
