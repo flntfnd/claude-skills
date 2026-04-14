@@ -1,7 +1,5 @@
 # claude-skills
-Claude Code skill files and a global CLAUDE.md. Built to stop re-explaining the same context in every session.
-
-Fork it. Strip what doesn't apply. Make it yours.
+My personal Claude Code skills setup, assembled by a season design-engineer in an attempt to automate higher quality baseline outputs in the human-design > agentic programmer realtionship.
 
 ---
 
