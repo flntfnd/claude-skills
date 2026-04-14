@@ -643,6 +643,91 @@ Use a `Platform` component property with values `iOS`, `Android`, `Web`. Bind th
 
 ---
 
+# Applying a Style to an Existing Design
+
+## When to Use This Workflow
+
+When a design already exists and needs to be reskinned to a specific visual style from STYLES.md. This is distinct from building from scratch or replicating -- the layout and content are known, but the visual language must change fundamentally.
+
+## This Is Not a Token Swap
+
+Applying a style in Figma means restructuring components, not just changing fill colors and font weights. If the Neo-Brutalism version looks like the Neo-Minimalism version with a yellow background, the style was not applied -- only the color variables were changed.
+
+The test: open both versions side-by-side. If the component structures are identical (same Auto Layout, same layer organization, same shadow/border treatment), the style was not applied.
+
+## Order of Operations
+
+**1. Read the Visual Signature first**
+
+Before touching Figma, read the Visual Signature section of the target style in `~/.claude/skills/STYLES.md`. Identify every structural requirement. Note the "Wrong if" checklist. This is what success looks like.
+
+**2. Audit the existing components against the target style**
+
+For each major component in the design (navigation, hero, content list items, cards, buttons, CTA sections), answer: does the current structure meet the Visual Signature requirements? List what must change structurally before any token changes.
+
+**3. Restructure components first**
+
+Make all structural changes before touching token values. Structural changes include:
+
+- Changing list items to cards (adding stroke and drop shadow layers)
+- Adding or removing Auto Layout padding to shift spacing rhythm
+- Changing corner radius on all frames (0 for Neo-Brutalism, large for Bento, blob shapes for Organic)
+- Adding drop shadows with the correct properties for the style
+- Removing shadows entirely (Brutalism Pure, Calm)
+- Changing section backgrounds (brand-color fills for Neo-Brutalism sections, single base color for Neumorphism)
+- Restructuring navigation (solid colored bar for Neo-Brutalism, nearly invisible for Calm, glass for Liquid Glass)
+
+**4. Apply Figma effects for the target style**
+
+Figma effects that are style-specific and must be applied correctly:
+
+**Hard offset shadow (Neo-Brutalism):**
+Drop Shadow effect → X: 4, Y: 4, Blur: 0, Spread: 0, Color: #000000, Opacity: 100%.
+This is not the same as a standard drop shadow. Blur must be 0. This is the defining Neo-Brutalist element.
+
+**Glassmorphism / glass card:**
+Fill: white at 12% opacity. Background Blur effect: 16px. Stroke: 1px white at 25% opacity, inside. The frame MUST be placed over rich content -- glass over a flat white background is invisible.
+
+**Neumorphism dual shadow:**
+Drop Shadow 1: X: -4, Y: -4, Blur: 8, Color: #FFFFFF, Opacity: 70%.
+Drop Shadow 2: X: 4, Y: 4, Blur: 8, Color: #000000, Opacity: 20%.
+No stroke. No fill color different from the background. All surfaces must match the page background color exactly.
+
+**Futuristic glow border:**
+Stroke: 1px, accent color at 20% opacity. Drop Shadow: X: 0, Y: 0, Blur: 12, Color: accent, Opacity: 60%.
+
+**Grain texture (Texture/Tactile):**
+Place a noise fill rectangle at 3-5% opacity as the top layer of every surface frame, with Blend Mode: Overlay.
+
+**5. Update token values**
+
+After the structure is correct, update the variable collections to match the target style's token specifications from STYLES.md. Switching the mode on a frame should now show the full style treatment, not just a color change.
+
+**6. Verify against the Visual Signature checklist**
+
+Read the "Wrong if" checklist in the Visual Signature section. If any condition applies, fix it before marking the style as applied.
+
+## Style-Specific Component Changes
+
+The most commonly wrong components and what must change for each style:
+
+**Neo-Brutalism -- content list items must become cards:**
+Select the list item component. Add a Stroke layer: 2px, #000000, Center. Add a Drop Shadow: X: 4, Y: 4, Blur: 0, Color: #000, 100%. Set corner radius to 0. Add padding inside the Auto Layout frame (12-16px all sides). The item is now a card. Do this for every item in every list.
+
+**Neo-Minimalism -- remove all card borders and shadows:**
+Select any component that has a visible stroke or drop shadow. Remove strokes. Remove all drop shadows. Separation between items must come from Auto Layout spacing (20-32px gap) only, not from borders.
+
+**Brutalism Pure -- remove all decorative styling:**
+Remove all drop shadows system-wide. Remove all strokes except explicit 1px dividers. Set all corner radii to 0. Reduce all fills to the two-color palette. No fills on section backgrounds -- all sections use the same paper background.
+
+**Neumorphism -- all surfaces must match one base color:**
+Set the page background, all card fills, and all button fills to the exact same base color (#E4EBF5 light, #1E1E2E dark). Any surface that differs in color breaks the style. Depth comes only from the dual shadow pair.
+
+**Organic/Biomorphic -- rectangles must become blobs:**
+For each card or container, open the corner radius and set asymmetric values (e.g., top-left: 60%, top-right: 40%, bottom-right: 70%, bottom-left: 30%). Or use a vector blob shape as the container frame instead of a rectangle. Standard rounded rectangles are not Organic.
+
+---
+
 # Replicating an Existing App
 
 ## When to Use This Workflow

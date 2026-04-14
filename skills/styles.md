@@ -12,6 +12,10 @@ The styles in this file are explicit overrides. They are chosen deliberately and
 
 When a style IS specified, a project has exactly one. Pick it before touching tokens. The style determines how the token system is weighted and what the component visual language looks like. The underlying token architecture stays constant -- this file tells you how to populate it.
 
+**Applying a style is not a token swap.** Changing colors and font weights while keeping the same component structure, layout rhythm, and spacing logic is not applying a style -- it's repainting the same design. Each style in this file requires structural changes: different component patterns (cards vs lists vs raw type), different layout logic (tight grid vs generous breathing room vs confrontational density), different interaction behaviors (hard-shadow press-collapse vs hairline hover vs none). If your Neo-Brutalism and Neo-Minimalism implementations share the same component structure and you've only changed CSS variables, you haven't applied Neo-Brutalism.
+
+The test: if someone sees a thumbnail of the design and can't immediately identify the style, the implementation is wrong. Each style has a visual signature that should be recognizable at a glance. Read the Visual Signature section of the chosen style first -- if your implementation doesn't match it, fix the structure before touching tokens.
+
 Every style listed here applies equally to iOS, Android, and Web. All three are first-class targets. Each style section contains implementation details for all three platforms.
 
 On native platforms: implement with platform-native APIs. No web-views, no visual approximations. If the style calls for a hard shadow, that's a SwiftUI `shadow()` modifier or a Compose `drawBehind` -- not a dropped PNG.
@@ -44,6 +48,19 @@ On Web: implement with CSS custom properties, modern layout (Grid, Flexbox), and
 Minimalism with warmth. Not the cold, sterile white-on-white minimalism of 2018 -- this has texture, personality, and emotional weight. Organic spacing rhythms replace rigid 8pt grids. Serif type pairs with restrained sans. The interface feels considered, not empty.
 
 **When to use**: Productivity apps, lifestyle, health, finance, anything that needs clarity without feeling clinical.
+
+## Visual Signature
+
+Identifiable at a glance by: large areas of warm off-white breathing room, serif display type at light weight, zero card borders, content separated by space alone or hairline rules (never full borders or shadows). Navigation is nearly invisible -- no background fill, no border, just a name and minimal links against the warm white. Lists of items sit on the page with space between them, not boxed into cards.
+
+**Structural requirements for common patterns:**
+- Navigation: text-only, no background, no border, floats above content
+- Hero: oversized serif display type at light (300) weight, significant vertical padding above and below, subtext in regular-weight sans at comfortable reading size
+- Content lists (work, features, etc.): items separated by a single 0.5-1px warm-tinted hairline divider or by space only -- no borders wrapping items, no card backgrounds
+- Sections: delineated by whitespace and a hairline rule if needed, not by background color changes or cards
+- CTAs: text links or minimal outlined buttons -- never filled contained buttons for secondary actions
+
+**Wrong if:** any component has a visible box/card border, shadows appear anywhere, the spacing feels tight, typography is all sans-serif, backgrounds are pure white (#FFFFFF) rather than warm off-white.
 
 ## Token Modifications
 
@@ -98,6 +115,20 @@ Use `MaterialTheme.typography` with Roboto Flex at low weight for headlines. Sur
 Bold, flat, direct. Hard offset shadows. High-contrast color pairs. Thick borders. Oversized type. Geometric shapes with sharp corners. Influenced by brutalist architecture's honest-materials philosophy -- what you see is what it is. No decorative layer pretending to be something it isn't. More polished and colorful than pure Brutalism.
 
 **When to use**: Fintech (non-enterprise), crypto, startups, creative tools, developer tools, anything targeting an audience that reads design intent as a signal.
+
+## Visual Signature
+
+Identifiable at a glance by: hard flat drop shadows on cards and interactive elements (`box-shadow: 4px 4px 0 0 #000`), thick black borders on every container, brand-color fills on large sections (hero, CTA, footer), oversized ExtraBold/Black weight display type. The press-collapse interaction on buttons -- shadow shrinks to zero and element shifts to fill the offset on click -- is the defining Neo-Brutalist behavior and must be implemented. If you hover over any interactive element and it doesn't visually react in a loud, physical way, the style is wrong.
+
+**Structural requirements for common patterns:**
+- Navigation: solid brand-color bar with thick black bottom border (2-4px), full-width, white or black text. In Figma: stroke on bottom edge only, 2-4px, #000.
+- Hero: full-width brand-color background section with ExtraBold display type on it, sharp edges, no radius. In Figma: frame fill = brand color, corner radius = 0.
+- Content lists (work, features, etc.): each item is a CARD -- a bordered rectangle with a hard offset shadow. NOT a divider-separated list. In Figma: 2px stroke (#000, center), Drop Shadow (X:4, Y:4, Blur:0, Color:#000, Opacity:100%), corner radius 0. Items that are just separated by hairlines are Neo-Minimalist.
+- Interactive elements (arrows, buttons, links): have the press-collapse shadow behavior. In prototype: on Press, change shadow offset from 4,4 to 0,0 and shift element by 4px down-right.
+- Section backgrounds: alternate between white and brand color. CTA section fills entirely with brand color.
+- Dividers between sections: 2px solid black, not hairlines.
+
+**Wrong if:** content items are divider-separated list rows rather than boxed cards with hard offset drop shadows (blur:0), any shadow has a blur radius above 0 (that makes it soft, not Neo-Brutalist), hover states are subtle color tints, any corner has radius above 4px.
 
 ## Token Modifications
 
@@ -213,6 +244,19 @@ Stripped to structure. No decorative layer. Monochrome or near-monochrome. Raw H
 
 **When to use**: Developer tools, technical documentation interfaces, niche platforms where the audience reads raw aesthetic as credibility. Not for consumer products.
 
+## Visual Signature
+
+Identifiable at a glance by: extreme typographic scale contrast (display text at 6-8rem next to body text at 1rem, nothing in between), heavy horizontal rules as the only structural dividers, monospace or raw grotesque type, no shadows anywhere, no rounded corners, no color beyond black/white and at most one stark accent. The layout looks like a well-designed HTML document -- functional, intentional, no chrome. It should feel slightly confrontational.
+
+**Structural requirements for common patterns:**
+- Navigation: plain text, no background, no border, no padding -- just the name and links at the top of the document flow. Could be a simple flex row with a `border-bottom: 1px solid #000` or nothing at all.
+- Hero: massive display type (clamp(3rem, 10vw, 8rem)), light or regular weight, running across the full column. Subtext in small body size. No background fill. Heavy `<hr>` below.
+- Content lists: either a raw table (column headers, data rows, no styling), or items separated only by a 1-2px `border-bottom: 1px solid #000`. No card containers, no shadows, no backgrounds on rows.
+- Sections: separated exclusively by `<hr>` (1-2px solid black) with generous vertical margin. No background color changes. No cards or containers.
+- Links/CTAs: underlined text. On hover: background/color invert (`background: #000; color: #fff`). No buttons with fills.
+
+**Wrong if:** any element has a box-shadow, any corner has border-radius, colors beyond black/white/one-accent appear, the typography scale feels moderate (no extreme contrast between large and small sizes), any section has a background fill.
+
 ## Token Modifications
 
 ```
@@ -289,6 +333,12 @@ Glass belongs on the navigation layer. Content sits below it. The material adapt
 
 **When to use**: iOS 26+, iPadOS 26+, macOS Tahoe 26+ apps that follow Apple's HIG.
 
+## Visual Signature
+
+Identifiable at a glance by: navigation bars, tab bars, and toolbars that are translucent -- you can see content scrolling beneath them. The glass material bends and refracts what's behind it. Content is rich and colorful, with the navigation chrome floating above it rather than sitting on a separate opaque surface. Everything below the navigation layer fills edge-to-edge.
+
+**Wrong if:** the navigation bar has a solid opaque background fill, content doesn't extend behind the glass layer, or glass treatment is applied to content-level elements (list rows, cards, images). Glass is navigation-layer only. On web, this style is not achievable -- use Glassmorphism (style #5) instead. Full implementation details in `~/.claude/skills/APPLE.md`.
+
 **On Web**: Liquid Glass as Apple defines it (real-time lensing, specular response to device motion) is not achievable in a browser. Use the Glassmorphism / Frosted style (style #5) for web surfaces that need the same depth and translucency intent. The Figma Glass effect with Refraction and Frost parameters approximates the visual for mockups, but the web implementation falls back to `backdrop-filter: blur()` with appropriate fill opacity and inner highlight stroke.
 
 **Known usability failure modes** (documented by NN/g and others in iOS 26's release): text placed over glass controls that sits on top of other text becomes unreadable; glass navigation bars that blend into complex wallpapers become invisible; overuse of motion and physics in the glass layer creates an interface that competes with content for attention rather than supporting it. These are failure modes to avoid, not examples to follow.
@@ -302,6 +352,18 @@ Token and implementation details for native: `~/.claude/skills/APPLE.md`.
 The static, web-native sibling of Liquid Glass. Translucent surfaces with background blur, inner highlight strokes, and subtle depth. Unlike Liquid Glass, there's no real-time lensing -- the effect is achieved through blur and opacity. Still contemporary and premium when not overused.
 
 **When to use**: Web dashboards, marketing sites, landing pages, Android apps where a premium translucent aesthetic is called for. On iOS, use Liquid Glass instead.
+
+## Visual Signature
+
+Identifiable at a glance by: cards and panels that show blurred content through them (`backdrop-filter: blur(16px)`), thin inner-highlight border (1px white at 25% opacity on top edge), a rich layered background (gradient, imagery, or deep color) showing through every glass surface. The page background is always rich -- solid white or grey kills the effect entirely. Everything floats.
+
+**Structural requirements:**
+- Background: a vivid gradient, hero image, or deep-color field behind ALL content. Glass over flat white renders as plain opaque white. This is not optional. In Figma: place a rich gradient or image frame behind all glass surfaces.
+- Cards/panels: In Figma: Fill = white at 12% opacity. Background Blur effect = 16px. Stroke = 1px white at 25% opacity, inside position. Drop Shadow for depth. The frame MUST sit over the rich background layer, not over a flat surface.
+- Navigation: glass bar floating above the hero image/gradient. In Figma: nav frame uses same glass fill/blur treatment, positioned over the hero.
+- Sections: layered depth -- items closer to the viewer are more opaque, background items more transparent.
+
+**Wrong if:** there is no rich background content for glass to blur (glass over flat white is invisible), any card fill is 100% opaque, the Background Blur effect is missing, there are hard dark strokes instead of semi-transparent white ones.
 
 ## Token Modifications
 
@@ -366,6 +428,18 @@ Box(
 Soft extruded surfaces. Elements appear to emerge from or press into the background. Achieved through dual shadows: one light from upper-left, one dark from lower-right. Background and element colors match closely. The result is tactile and dimensional without explicit borders.
 
 In 2026, pure neumorphism has evolved into **Claymorphism** -- the same dual-shadow approach but with an added inner glow that makes elements appear slightly inflated, like soft clay or silicone. This subtle addition improves perceived affordance without meaningfully impacting accessibility. Apply it selectively to high-touch interactive elements (buttons, toggles, knobs) rather than background surfaces.
+
+## Visual Signature
+
+Identifiable at a glance by: everything is the SAME background color -- there are no borders, no background changes between sections, no surface hierarchy through color. Depth is created exclusively through dual shadows. Buttons look physically raised. Pressed/active states look physically pushed in (inset shadow). The whole interface is one tone, modulated only by shadow.
+
+**Structural requirements:**
+- Background: a single base color everywhere. Every surface -- page, cards, buttons -- uses this same color. In Figma: set the page background and every frame fill to the exact same color variable. No surface should use a different fill value.
+- Raised elements: In Figma: Drop Shadow 1 (X:-4, Y:-4, Blur:8, Color:#FFFFFF, Opacity:70%) + Drop Shadow 2 (X:4, Y:4, Blur:8, Color:#000000, Opacity:20%). No stroke. No fill different from the base color.
+- Pressed/active: In Figma prototype: on press, swap to an Inner Shadow variant (Inner Shadow X:2, Y:2, Blur:6, #000 20% + Inner Shadow X:-2, Y:-2, Blur:6, #FFF 70%). Elements push in on interaction.
+- No borders anywhere. No color fills on buttons. The dual shadow IS the affordance.
+
+**Wrong if:** any surface uses a different fill color from the base, any element has a visible stroke, any shadow is a single directional shadow rather than the dual light/dark pair.
 
 **When to use**: Health and wellness, audio and music apps, any UI where a tactile, physical feel serves the content. Use sparingly -- it does not scale to information-dense layouts. Accessible neumorphism (Soft UI) maintains contrast standards; classic neumorphism does not.
 
@@ -501,6 +575,18 @@ Type is the primary visual element and it moves. Text animates in response to sc
 
 **When to use**: Onboarding flows, empty states, marketing surfaces within apps, loading experiences, editorial content. Not for data tables or utility UI.
 
+## Visual Signature
+
+Identifiable at a glance by: oversized display type that animates on entry or scroll, with supporting content revealed progressively. Type is the layout -- there are no traditional card containers or image heroes. On scroll, words or characters reveal themselves. The page feels alive through typographic motion, not graphic elements.
+
+**Structural requirements:**
+- Hero: oversized display text (72-120px) that animates in. Characters reveal via clip/translateY animation or weight-axis transition. No static hero image as the primary element.
+- Content reveals: scroll-triggered character/word/line stagger animations. Text arrives with purpose -- ease-out or spring, not linear.
+- Layout: type-first. Cards and containers are minimal or absent. White space is generous specifically to give moving type room.
+- Reduce motion fallback: all animations replaced with opacity fade. Content must be fully readable and functional without any motion.
+
+**Wrong if:** the page looks identical with animations disabled (motion is decoration, not structure), text is static at all scroll positions, layout relies on traditional image/card structure with type as a secondary element.
+
 ## Token Modifications
 
 ```
@@ -595,6 +681,20 @@ Dark surfaces. Neon accent colors. Glowing UI elements. Grid systems as foregrou
 
 **When to use**: Developer tools, security/monitoring dashboards, fintech (high-end), AI products, gaming-adjacent apps, anything where projecting technical sophistication is on-brand.
 
+## Visual Signature
+
+Identifiable at a glance by: near-black background (#0A0A0F), neon accent colors with glow (`box-shadow: 0 0 16px var(--accent)`), visible grid lines or geometric border patterns at low opacity, monospace type for data readouts, angular/minimal UI chrome. Should feel like a command center.
+
+**Structural requirements:**
+- Background: deep near-black, not generic dark grey. Subtle noise or gradient (radial from center at low opacity) acceptable.
+- Accent elements: borders and active states glow. Use `box-shadow: 0 0 8px var(--accent-color)` on focused/active states.
+- Cards: 1px accent-color border at 15-20% opacity, background slightly lighter than page. On hover: border brightens to full accent, subtle glow appears.
+- Data elements: monospace type. Numbers and readouts use tabular figures, the monospace aesthetic is intentional.
+- Grid: optional but characteristic -- a subtle CSS grid pattern at 5-8% opacity as a background texture (`background-image: linear-gradient` technique).
+- Primary buttons: glow on hover. Accent fill with `box-shadow` glow.
+
+**Wrong if:** the background is generic dark grey, there are no glowing elements or the glow is absent, the typography is all proportional sans-serif with no monospace data treatment, cards look like standard rounded-corner cards with no border treatment.
+
 ## Token Modifications
 
 ```
@@ -681,6 +781,20 @@ Lock to dark theme: `darkTheme = true` in `AppTheme`. Achieve glow with layered 
 Modular card-based layout. Content organized into a grid of variably-sized rectangular cells. Some cells span multiple columns or rows. The grid is the design -- the bento structure is explicit and intentional, not just a layout tool. Popularized by Apple's product pages and widely adopted in dashboards and landing pages.
 
 **When to use**: Dashboards, home screens, marketing surfaces, any context where varied content types need to coexist at the same visual level. Strong fit for iPad and large-screen layouts.
+
+## Visual Signature
+
+Identifiable at a glance by: the entire page content organized into a grid of variably-sized rounded-corner tiles. The grid IS the layout -- there is no traditional linear section flow. One or two large tiles dominate, surrounded by smaller tiles. Size communicates hierarchy. The background between tiles shows through as negative space.
+
+**Structural requirements:**
+- Layout: CSS Grid with explicit column/row template. ALL content lives inside tiles. No free-flowing content outside the grid.
+- Tile sizes: at minimum three distinct sizes (large 2x2, medium 2x1, small 1x1). Equal-size grids are not Bento -- they're card grids.
+- Radius: generous and consistent. 20-32px on all tiles. Same radius on every tile.
+- Gap: 12-20px between tiles, visually evident, matching the background color.
+- Featured tile: the largest cell uses a brand or accent color background and contains the highest-priority content.
+- Content per tile: one concept per tile. A tile with a metric, a tile with a stat, a tile with an action. Not mixed content.
+
+**Wrong if:** tiles are all the same size, content flows in a linear column outside the grid, there's no clear size hierarchy between tiles, radius is inconsistent between tiles.
 
 ## Token Modifications
 
@@ -786,6 +900,19 @@ Grids as foreground design elements. Typography leads. Influenced by print desig
 
 **When to use**: News and editorial apps, financial reporting tools, research tools, professional services. Signals: sophisticated, trustworthy, precise.
 
+## Visual Signature
+
+Identifiable at a glance by: an explicit column grid that's visible and respected, serif headline type paired with dense body text, horizontal rules as structural dividers, information density that reads like a newspaper or magazine spread. Multiple typographic sizes coexisting on the same screen without feeling chaotic because the hierarchy is rigorous.
+
+**Structural requirements:**
+- Layout: explicit CSS Grid with visible column logic. At least a two-column content area. Grid structure is apparent.
+- Typography: serif display type (Canela, Libre Caslon, Playfair, or system serif). Body text at 16-18px with 1.6-1.8 line height. Caption text at 11-12px with letter-spacing. Multiple type sizes visible simultaneously.
+- Dividers: hairline horizontal rules (`border-top: 1px solid`) as the primary structural element between sections and content groups.
+- No card containers: content sits in columns, separated by rules and whitespace, not boxed into cards.
+- Section labels: small-caps or uppercase, tracked out (`letter-spacing: 0.08-0.15em`), 11-12px.
+
+**Wrong if:** typography is all one size or all sans-serif, layout is a single centered column with no visible grid logic, sections are separated by background-color blocks rather than rules and whitespace, the design lacks information density.
+
 ## Token Modifications
 
 ```
@@ -844,6 +971,18 @@ Horizontal rules are primary structural elements. Sections are delineated by rul
 Flowing, irregular shapes. Nature-inspired curves. No hard corners or rigid geometry. Asymmetric balance. Gradient washes that suggest light on organic surfaces. Illustrations and shapes feel hand-crafted or grown. Color palettes from nature: earth tones, botanical greens, sky blues, terracotta, sage.
 
 **When to use**: Wellness, meditation, health, food, sustainability, any product that benefits from a non-digital, living-world feeling.
+
+## Visual Signature
+
+Identifiable at a glance by: blob-shaped background elements and card containers (CSS `border-radius` values above 40%, or SVG clip-paths), soft gradient fills that shift between nature-derived colors, asymmetric layouts where elements don't align to a strict grid, and an overall sense of warmth and imperfection.
+
+**Structural requirements:**
+- Cards and containers: irregular border-radius (e.g., `border-radius: 60% 40% 70% 30% / 40% 60% 30% 70%`) or SVG clip-path blobs. NOT standard rectangles with soft corners.
+- Background: gradient blobs or organic shapes as decorative background layers. Multiple layered `radial-gradient` at low opacity, or SVG blob elements positioned behind content.
+- Color: nature palette. No pure black, no pure white, no corporate blues. Warm earth tones, botanical greens, soft terracotta.
+- Layout: intentionally asymmetric. Text columns offset rather than centered, elements that don't snap to a strict grid.
+
+**Wrong if:** containers are rectangles (even with large radius), layout is symmetrically grid-aligned, colors are standard corporate/tech palette, background is a flat solid color with no gradient or organic shapes.
 
 ## Token Modifications
 
@@ -931,6 +1070,18 @@ Grain, noise, paper, fabric. Surfaces that feel like they have physical material
 
 **When to use**: Any style can incorporate texture as a layer. Works especially well with Neo-Minimalism, Organic, Editorial, and Neo-Brutalism. Least compatible with Futuristic and pure Glassmorphism.
 
+## Visual Signature
+
+Identifiable at a glance by: surfaces that visually feel like they have physical material -- paper, linen, grain, concrete. Not photorealistic, but clearly not flat digital. A grain/noise overlay at 3-6% opacity over gradients or solid backgrounds is the minimum. More intense textures (paper grain, fabric weave patterns via CSS) for specific surfaces.
+
+**Structural requirements:**
+- Global grain: SVG `feTurbulence` filter or CSS noise overlay at 3-5% opacity applied to the page background. Without this, the style isn't applied.
+- Surface differentiation: different texture intensities for different surfaces. Page background: subtle (3%). Cards: slightly more visible (5-7%). Hero elements: most pronounced.
+- Color: warm or earthy. Flat, pure colors fight the texture. Slightly desaturated, slightly warm palette that reads as "printed" rather than "emitted".
+- Typography: warm-weight, humanist sans or serif. Crisp but not sterile.
+
+**Wrong if:** backgrounds and surfaces are flat solid colors or clean gradients with no grain overlay, the design looks like any other clean flat-design execution with slightly warm colors.
+
 ## Token Modifications
 
 ```
@@ -986,6 +1137,18 @@ Canvas-drawn Perlin noise overlay on `drawBehind`. Use `BlendMode.Overlay` for c
 Nostalgia for early internet aesthetics: pixelation, CRT scan lines, terminal green, dot-matrix type, Windows 3.1 UI chrome, early web brutalism. But filtered through 2026 sensibilities -- high resolution, performant, intentional. The aesthetic is nostalgic but the craft is contemporary.
 
 **When to use**: Niche apps, gaming-adjacent products, developer tools targeting a specific generational audience, music apps, creative tools where the retro feel is on-brand.
+
+## Visual Signature
+
+Identifiable at a glance by: CRT-green or amber monochrome terminal palette (or Windows 3.1 bevel-border chrome), scanline overlay, monospace type throughout, and at least one overtly retro structural element (beveled borders, blinking cursor, terminal-style text rendering, pixelated elements). Should make someone who lived through the early internet immediately feel nostalgia.
+
+**Structural requirements:**
+- Color scheme: commit to one era. Terminal (near-black + phosphor green or amber). OR Windows 3.1 (grey chrome + blue title bars + bevel borders). OR early web (primary colors, Times New Roman, inline borders).
+- Scanlines: CSS `repeating-linear-gradient` overlay at 5-8% opacity on the page background. Must be present -- it's the most recognizable element.
+- Typography: `font-family: 'JetBrains Mono', 'Courier New', monospace` everywhere. No proportional sans-serif.
+- Structural element: at least one of -- bevel-border UI chrome (box-shadow for raised/sunken effect), blinking text cursor, terminal prompt indicator (`>`), or pixelated/dithered decorative element.
+
+**Wrong if:** the type is a proportional sans-serif, there are no scanlines, the color palette is contemporary tech (dark grey, blue accent), nothing reads as explicitly retro-computational.
 
 ## Token Modifications
 
@@ -1085,6 +1248,21 @@ Keep effects subtle enough that content remains readable. Scan lines at above 10
 Deliberate restraint. Extreme whitespace. Limited color. No notifications aesthetic. Designed for extended use without fatigue. Every visual element serves a purpose -- decoration is a cost, not a default. Motion is almost absent. Type is generous and unhurried. The experience has the feel of a well-designed physical object.
 
 **When to use**: Reading apps, writing tools, meditation, journaling, any context where the user benefits from the interface receding completely. Also a sound default for enterprise and professional tools.
+
+## Visual Signature
+
+Identifiable at a glance by: extreme whitespace (padding and margins 1.5-2x what you'd use in any other style), a single muted accent color used extremely sparingly (one or two places maximum), generous line-height and letter-spacing that makes reading feel unhurried, and a near-total absence of UI chrome. Navigation almost disappears. There are no badges, indicators, unread counts, or notification-style elements. The content is everything; the interface is almost nothing.
+
+**Structural requirements:**
+- Spacing: double the base spacing scale. If the default is 24px between sections, this is 48px. The whitespace IS the design.
+- Typography: large base size (18-20px body), generous line-height (1.7-1.9), moderate tracking. Type should invite extended reading.
+- Color: maximum two colors in use at any time -- near-black text, near-white background, and one muted accent used only for the single most important interactive element. Nothing else.
+- Navigation: minimal to invisible. A small logo or title, one or two links. No background, no border, no weight. Should feel like it might not be there.
+- Interactive elements: single underline or color change on hover. No filled buttons for secondary actions. No icons unless they're the only possible representation.
+- Motion: near-zero. If anything animates, it's a slow opacity fade (300-500ms ease). No spring physics, no transforms, no scroll animations.
+- No: badges, unread counts, notification dots, progress bars for non-essential tasks, tooltips that appear unprompted, any element that bids for attention.
+
+**Wrong if:** anything bids for the user's attention beyond the primary content, there is more than one accent color, spacing feels "normal" rather than exceptionally generous, navigation has visual weight, any element animates with spring physics or transforms.
 
 ## Token Modifications
 
