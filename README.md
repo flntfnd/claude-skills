@@ -9,20 +9,16 @@ Fork it. Strip what doesn't apply. Make it yours.
 
 ## Files
 
-
-~/.claude/
-|-- CLAUDE.md
-\-- skills/
-|-- APPLE.md         iOS / iPadOS / macOS (SwiftUI)
-    |-- ANDROID.md   Android (Jetpack Compose)
-    |-- WINDOWS.md   Windows (WinUI 3)
-    |-- WEB.md       Web (Next.js / Astro)
-    |-- MOTION.md    animation, all platforms
-    |-- FIGMA.md     Figma design systems
-    |-- SKETCH.md    Sketch design systems
-    |-- STYLES.md    14 visual styles, all platforms
-    \-- AUDIT.md     audit checklists
-
+~/.claude/CLAUDE.md               global config, loads on every session
+~/.claude/skills/APPLE.md         iOS / iPadOS / macOS (SwiftUI)
+~/.claude/skills/ANDROID.md       Android (Jetpack Compose)
+~/.claude/skills/WINDOWS.md       Windows (WinUI 3)
+~/.claude/skills/WEB.md           Web (Next.js / Astro)
+~/.claude/skills/MOTION.md        animation, all platforms
+~/.claude/skills/FIGMA.md         Figma design systems
+~/.claude/skills/SKETCH.md        Sketch design systems
+~/.claude/skills/STYLES.md        14 visual styles, all platforms
+~/.claude/skills/AUDIT.md         audit checklists
 
 ### `CLAUDE.md`
 
