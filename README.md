@@ -1,24 +1,25 @@
 # claude-skills
-
-Claude Code skill files and a global CLAUDE.md. Built from the perspective of a seasoned design-engineer, with the goal of automating higher quality building within the human-designer > agentic programmer relationship.
+Claude Code skill files and a global CLAUDE.md. Built to stop re-explaining the same context in every session.
 
 Fork it. Strip what doesn't apply. Make it yours.
 
-
 ---
+
 
 ## Files
 
-~/.claude/CLAUDE.md               global config, loads on every session
-~/.claude/skills/APPLE.md         iOS / iPadOS / macOS (SwiftUI)
-~/.claude/skills/ANDROID.md       Android (Jetpack Compose)
-~/.claude/skills/WINDOWS.md       Windows (WinUI 3)
-~/.claude/skills/WEB.md           Web (Next.js / Astro)
-~/.claude/skills/MOTION.md        animation, all platforms
-~/.claude/skills/FIGMA.md         Figma design systems
-~/.claude/skills/SKETCH.md        Sketch design systems
-~/.claude/skills/STYLES.md        14 visual styles, all platforms
-~/.claude/skills/AUDIT.md         audit checklists
+- `~/.claude/CLAUDE.md` — global config, loads on every session
+- `~/.claude/skills/APPLE.md` — iOS / iPadOS / macOS (SwiftUI)
+- `~/.claude/skills/ANDROID.md` — Android (Jetpack Compose)
+- `~/.claude/skills/WINDOWS.md` — Windows (WinUI 3)
+- `~/.claude/skills/WEB.md` — Web (Next.js / Astro)
+- `~/.claude/skills/MOTION.md` — animation, all platforms
+- `~/.claude/skills/FIGMA.md` — Figma design systems
+- `~/.claude/skills/SKETCH.md` — Sketch design systems
+- `~/.claude/skills/STYLES.md` — 14 visual styles, all platforms
+- `~/.claude/skills/AUDIT.md` — audit checklists
+
+---
 
 ### `CLAUDE.md`
 
