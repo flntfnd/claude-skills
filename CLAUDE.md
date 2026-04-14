@@ -33,6 +33,18 @@ If a modern API exists for something, use it. Don't default to older patterns fo
 
 App Store compliance is non-negotiable. Before implementing any iOS, iPadOS, or macOS feature, verify it doesn't conflict with App Store Review Guidelines, privacy requirements (ATT, data collection disclosures), or platform entitlements. If a proposed approach would likely fail review, say so before building it.
 
+# Default Visual Language
+
+When no visual style is specified in the brief or design files, build to the platform's own design language. The goal is an app that looks like it was made by the platform owner.
+
+**iOS / iPadOS / macOS**: Apple HIG. Liquid Glass on the navigation layer. SF Pro. System semantic colors. Native SwiftUI components. Tab bars, navigation stacks, sheets, and toolbars behave exactly as Apple defines them. A user should not be able to tell this wasn't shipped by Apple.
+
+**Android**: Material 3 Expressive. Dynamic color from the user's wallpaper. Roboto Flex. M3 components (NavigationBar, NavigationRail, TopAppBar, FAB, etc.). Bottom navigation, adaptive layouts, edge-to-edge. A user should not be able to tell this wasn't shipped by Google.
+
+**Windows**: Fluent Design. Mica on persistent surfaces (main windows). Acrylic on transient surfaces (menus, flyouts). Segoe UI Variable. WinUI 3 controls. NavigationView with adaptive modes. A user should not be able to tell this wasn't shipped by Microsoft.
+
+This default applies unless a style from STYLES.md is explicitly requested. Styles in STYLES.md are intentional overrides of native conventions -- they require a deliberate design decision, not a default. If no style is specified, native is correct.
+
 # Writing Code
 Get it right the first time. Don't write code you'd flag in an audit.
 
