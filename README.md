@@ -1,5 +1,5 @@
 # claude-skills
-My personal Claude Code skills setup, assembled by a season design-engineer in an attempt to automate higher quality baseline outputs in the human-design > agentic programmer realtionship.
+My Claude Code skills setup. Assembled by a season design-engineer (me) in an attempt to automate higher quality baseline outputs in the human-design > agentic programmer realtionship.
 
 ---
 
