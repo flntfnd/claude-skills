@@ -6,7 +6,11 @@ Each style defines token modifications, component rules, and native implementati
 
 # How to Use This File
 
-A project has one design style. Pick it before touching tokens. The style determines how the token system is weighted and what the component visual language looks like. The underlying token architecture from DESIGN-systems.md stays constant -- this file tells you how to populate it.
+The styles in this file are explicit overrides. They are chosen deliberately and applied intentionally. They are not defaults.
+
+**When no style is specified, the correct answer is native.** iOS apps look like Apple built them. Android apps look like Google built them. Windows apps look like Microsoft built them. That means Liquid Glass, SF Pro, and Apple HIG on iOS; Material 3 Expressive, dynamic color, and Roboto Flex on Android; Fluent Design, Mica, and Segoe UI Variable on Windows. Native is not a style -- it's the baseline that every style in this file intentionally departs from.
+
+When a style IS specified, a project has exactly one. Pick it before touching tokens. The style determines how the token system is weighted and what the component visual language looks like. The underlying token architecture stays constant -- this file tells you how to populate it.
 
 Every style listed here applies equally to iOS, Android, and Web. All three are first-class targets. Each style section contains implementation details for all three platforms.
 
