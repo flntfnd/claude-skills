@@ -128,6 +128,8 @@ When working on Apple platform UI: read ~/.claude/skills/apple.md before writing
 When working on Android UI: read ~/.claude/skills/android.md before writing any view code.
 When working on Windows / WinUI 3: read ~/.claude/skills/windows.md before writing any view code.
 When building or auditing a Figma design system: read ~/.claude/skills/figma.md and ~/.claude/skills/styles.md before starting.
+When working in Paper (paper.design): read ~/.claude/skills/paper.md before touching the canvas. Start Paper Desktop first -- MCP server starts automatically.
+When working in Pencil (pencil.dev): read ~/.claude/skills/pencil.md before touching the canvas. Open the .pen file in VS Code/Cursor first to activate MCP.
 When working on web (HTML/CSS/JS/TS/Next.js/Astro): read ~/.claude/skills/web.md before writing any web code.
 When working on motion or animation (any platform): read ~/.claude/skills/motion.md before writing any animation code.
 When the project has a specific visual style (Neo-Brutalism, Glassmorphism, Bento Grid, etc.): read ~/.claude/skills/styles.md for token values and platform-specific implementation for that style.
