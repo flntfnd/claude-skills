@@ -13,6 +13,51 @@ Dynamic color (Material You) derives tones from the user's wallpaper. Support it
 
 ---
 
+# Platform Visual Signature
+
+A correctly implemented Android / M3E design is immediately recognizable as Google-made. If someone sees the design and thinks "this looks like iOS" or "this looks like a website," the implementation is wrong.
+
+**What makes it immediately look like Android:**
+- Bottom navigation bar (NavigationBar) with 3-5 icon+label destinations
+- Content fills edge-to-edge: status bar and system navigation bar are transparent, content shows behind them
+- Material You dynamic color -- the app's color palette is derived from the user's wallpaper. The primary color changes per device.
+- Roboto Flex or Roboto throughout. Not SF Pro. Not Inter.
+- Floating Action Button (FAB) for the primary action on a screen, positioned lower-right above the NavigationBar
+- LargeTopAppBar that collapses as the user scrolls (not a static fixed header)
+- M3 shape system: slightly rounded (ExtraSmall = 4dp, Small = 8dp, Medium = 12dp). Not sharp. Not excessively rounded.
+- Ripple indication on all interactive surfaces
+
+**Figma frame structure for phone (412 × 915, Pixel 9 Pro):**
+```
+Frame: 412 × 915
+  ├── Status Bar (32px, transparent — content shows through)
+  ├── LargeTopAppBar (152px, collapses to 64px on scroll)
+  ├── Content Area (fills remaining height, extends behind status bar)
+  ├── NavigationBar (80px)
+  └── System Navigation (gesture bar or 3-button, 24-48px)
+```
+
+Content extends edge-to-edge full width. Status bar and NavigationBar float over content with transparency — they do not push content down. Interactive content should be padded away from the system gesture zone.
+
+**Figma frame structure for tablet / foldable (840 × 1_080, medium width):**
+```
+Frame: 840 × 1080
+  ├── Status Bar (32px)
+  ├── NavigationRail (80px wide, left edge, full height) — replaces NavigationBar at this width
+  └── Content Area (760px wide, full height)
+```
+
+**Wrong if:**
+- The primary navigation is at the top (tabs at top are iOS/web, not Android)
+- Content does not extend behind the status bar and system navigation (no edge-to-edge)
+- Colors are hardcoded instead of using M3 color roles (primary, onPrimary, surface, etc.)
+- The font is SF Pro or a generic web sans-serif
+- There is no FAB for primary actions
+- Shape is all sharp corners (radius 0) or all pill shapes -- M3 uses moderate consistent radius
+- Navigation is push-based like iOS rather than using NavigationBar destination switching
+
+---
+
 # Setup
 
 ```kotlin
@@ -658,7 +703,194 @@ Scale text with system font size. Don't hardcode `sp` values that ignore user pr
 
 ---
 
+# Custom Rendering
+
+What separates native Android apps that feel hand-crafted from generic Compose output. Use these APIs when standard composables can't achieve the visual result.
+
+## Compose Canvas
+
+Direct 2D drawing inside Compose. Same power as `onDraw()` without View overhead.
+
+```kotlin
+// Waveform visualizer
+@Composable
+fun WaveformCanvas(samples: List<Float>) {
+    Canvas(modifier = Modifier.fillMaxWidth().height(80.dp)) {
+        val midY = size.height / 2
+        val path = Path()
+
+        samples.forEachIndexed { i, sample ->
+            val x = size.width * i / samples.size
+            val y = midY - sample * midY * 0.9f
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+
+        drawPath(
+            path = path,
+            brush = Brush.horizontalGradient(listOf(Color.Cyan, Color(0xFF7C4DFF))),
+            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+        )
+    }
+}
+
+// Animated organic blob
+@Composable
+fun AnimatedBlob() {
+    val infiniteTransition = rememberInfiniteTransition()
+    val phase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * Math.PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(4000, easing = LinearEasing)
+        )
+    )
+
+    Canvas(modifier = Modifier.size(200.dp)) {
+        val cx = size.width / 2
+        val cy = size.height / 2
+        val baseRadius = size.minDimension * 0.4f
+        val points = 8
+
+        val path = Path()
+        for (i in 0..points) {
+            val angle = (i.toFloat() / points) * 2f * PI.toFloat()
+            val noise = sin(angle * 3 + phase) * 20f + cos(angle * 5 + phase * 0.7f) * 15f
+            val r = baseRadius + noise
+            val x = cx + cos(angle) * r
+            val y = cy + sin(angle) * r
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+
+        drawPath(
+            path,
+            brush = Brush.radialGradient(
+                colors = listOf(Color(0xFF4CAF83), Color(0xFF2E7D5F).copy(alpha = 0f)),
+                center = Offset(cx, cy),
+                radius = baseRadius + 40f
+            )
+        )
+    }
+}
+```
+
+## AGSL (Android Graphics Shading Language)
+
+Android's shader language (API 33+). GLSL-like syntax, runs on the GPU for custom visual effects.
+
+```kotlin
+// Chromatic aberration effect
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+@Composable
+fun ChromaticAberration(intensity: Float, content: @Composable () -> Unit) {
+    val shader = remember {
+        RuntimeShader("""
+            uniform shader image;
+            uniform float intensity;
+            
+            half4 main(float2 coord) {
+                half4 r = image.eval(coord + float2(intensity, 0.0));
+                half4 g = image.eval(coord);
+                half4 b = image.eval(coord - float2(intensity, 0.0));
+                return half4(r.r, g.g, b.b, g.a);
+            }
+        """.trimIndent())
+    }
+
+    Box(modifier = Modifier.graphicsLayer {
+        shader.setFloatUniform("intensity", intensity)
+        renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "image")
+            .asComposeRenderEffect()
+    }) {
+        content()
+    }
+}
+
+// Noise / grain texture shader
+val grainShader = RuntimeShader("""
+    uniform float2 resolution;
+    uniform float time;
+    uniform float intensity;
+    uniform shader content;
+    
+    float random(float2 st) {
+        return fract(sin(dot(st, float2(12.9898, 78.233))) * 43758.5453);
+    }
+    
+    half4 main(float2 coord) {
+        half4 color = content.eval(coord);
+        float noise = random(coord / resolution + fract(time)) * intensity;
+        return half4(color.rgb + half3(noise - intensity * 0.5), color.a);
+    }
+""".trimIndent())
+```
+
+## RenderEffect
+
+Apply GPU effects to any composable (API 31+). Lower-level than AGSL but covers most blur/color needs without custom shaders.
+
+```kotlin
+// Blur behind an element (glass card effect)
+@Composable
+fun BlurredCard(blurRadius: Float, content: @Composable () -> Unit) {
+    Box(modifier = Modifier.graphicsLayer {
+        renderEffect = BlurEffect(
+            radiusX = blurRadius,
+            radiusY = blurRadius,
+            edgeTreatment = TileMode.Clamp
+        ).asComposeRenderEffect()
+    }) {
+        content()
+    }
+}
+
+// Chain effects: blur then color matrix
+val chainedEffect = RenderEffect.createChainEffect(
+    RenderEffect.createBlurEffect(16f, 16f, Shader.TileMode.CLAMP),
+    RenderEffect.createColorFilterEffect(
+        ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.4f) })
+    )
+)
+```
+
+## AnnotatedString for Rich Typography
+
+```kotlin
+// Mixed weight / color inline text
+val annotated = buildAnnotatedString {
+    withStyle(SpanStyle(fontSize = 48.sp, fontWeight = FontWeight.Bold)) {
+        append("Design")
+    }
+    withStyle(SpanStyle(
+        fontSize = 48.sp,
+        fontWeight = FontWeight.Light,
+        fontFamily = FontFamily.Serif,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )) {
+        append(" system.")
+    }
+}
+
+Text(
+    text = annotated,
+    letterSpacing = 0.05.em
+)
+
+// Paragraph-level styling
+val paragraphAnnotated = buildAnnotatedString {
+    withStyle(ParagraphStyle(
+        lineHeight = 1.8.em,
+        textIndent = TextIndent(firstLine = 16.sp)
+    )) {
+        append(articleBody)
+    }
+}
+```
+
+---
+
 # Anti-Patterns
+
 
 Using XML layouts alongside Compose in new code. Pick one per screen. Don't mix for new work.
 

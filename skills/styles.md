@@ -1368,7 +1368,187 @@ h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
 
 ---
 
+# Style-to-Technique Mapping
+
+Each style has specific rendering techniques that produce its signature visual effects. These are not optional embellishments -- they are what makes the style recognizable. Standard CSS and stock components are insufficient for most of these. The techniques below are what separate a hand-crafted implementation from a token swap.
+
+Implementation details for all techniques are in:
+- `~/.claude/skills/MOTION.md` -- Three.js, WebGL, shaders, GSAP, post-processing
+- `~/.claude/skills/WEB.md` -- blend modes, clip-path, Canvas 2D, SVG filters, custom cursor
+- `~/.claude/skills/APPLE.md` -- SwiftUI Canvas, Metal shaders, custom Animatable
+- `~/.claude/skills/ANDROID.md` -- Compose Canvas, AGSL, RenderEffect
+- `~/.claude/skills/WINDOWS.md` -- Win2D, CompositionAPI, ExpressionAnimation
+
+---
+
+## 1. Neo-Minimalism
+**Web**: CSS `mix-blend-mode: multiply` on a grain texture overlay (3-4% opacity) over warm gradients. SVG `feTurbulence` filter for the noise. `backdrop-filter: blur(1px)` on navigation. View Transitions API for page changes -- slow, opacity-based.
+
+**iOS**: SwiftUI Canvas for any decorative background elements. `.animation(.easeInOut(duration: 0.5))` everywhere -- nothing snappy.
+
+**Android**: Compose Canvas for grain overlays. `graphicsLayer { alpha = ... }` for fade-in reveals. No spring animations.
+
+**Windows**: Mica background. Win2D for any procedural texture. `ScalarKeyFrameAnimation` with `EasingFunctionFactory.CreateCubicBezierEasingFunction` for slow, deliberate transitions.
+
+**Signature GPU technique**: SVG `feTurbulence` noise at low opacity blended via `multiply`. Everything else is restraint -- fewer effects, not more.
+
+---
+
+## 2. Neo-Brutalism
+**Web**: CSS `box-shadow: 4px 4px 0 0 #000` with blur: 0 on every interactive element. GSAP `to(element, { boxShadow: '0px 0px 0 0 #000', x: 4, y: 4, duration: 0.08 })` on press. No blurs, no gradients, no WebGL -- the style is about restraint in a different direction: everything is flat and physical.
+
+**iOS**: SwiftUI `shadow(color: .black, radius: 0, x: 4, y: 4)`. On press: `offset(x: 4, y: 4)` with `.animation(.spring(response: 0.12, dampingFraction: 0.5))` -- snap to the shadow position.
+
+**Android**: `drawBehind` for the offset fill shadow (blur=0, solid black). `Animatable` or `animateFloatAsState` for the press-translate.
+
+**Windows**: `DropShadowEffect` with `ShadowDepth: 0, Direction: 135, BlurRadius: 0`. Win2D for the offset shadow on canvas elements.
+
+**Signature GPU technique**: None -- the style deliberately avoids GPU effects. The physical press-collapse interaction is the signature. Implement it correctly on every platform.
+
+---
+
+## 3. Brutalism (Pure)
+**Web**: No GPU effects. The entire style runs on document flow and typography. GSAP is overkill here -- CSS `transition: background-color 0.1s` on links (invert on hover) is correct. If any animation exists, it's a link hover inversion.
+
+**Signature GPU technique**: None intentionally. Any GPU effect immediately breaks the style.
+
+---
+
+## 4. Liquid Glass
+**Web**: Not achievable. See style #5.
+
+**iOS**: `.glassEffect()` modifier. All native -- no custom Metal needed. Post-processing in Three.js would be wrong here.
+
+**Signature GPU technique**: Apple's own Liquid Glass rendering engine. Don't replicate it -- use the native API.
+
+---
+
+## 5. Glassmorphism / Frosted
+**Web**: `backdrop-filter: blur(16px) saturate(1.4)`. Requires a rich background -- use a Three.js canvas behind the DOM (fixed, z-index: 0) with a slow-moving gradient or particle field for maximum depth. GSAP ScrollTrigger to evolve the background as the user scrolls. CSS `mix-blend-mode: overlay` on highlight strokes.
+
+**Three.js background for glass**: Slow-moving color gradient mesh. `MeshStandardMaterial` with a dark color, point lights that pulse gently. The background needs to be interesting enough that the glass effect reads.
+
+**iOS**: `.ultraThinMaterial` / `.regularMaterial`. System-provided.
+
+**Android**: `RenderEffect.createBlurEffect(16f, 16f)` + `graphicsLayer { renderEffect = ... }`.
+
+**Windows**: Acrylic backdrop brush via `DesktopAcrylicBackdrop`.
+
+**Signature GPU technique (Web)**: Three.js or Canvas 2D animated background that the CSS glass layers blur over. Without a dynamic background, glass is invisible.
+
+---
+
+## 6. Neumorphism / Soft UI
+**Web**: CSS dual `box-shadow` (no WebGL needed). `box-shadow: -4px -4px 8px rgba(255,255,255,0.7), 4px 4px 8px rgba(0,0,0,0.2)`. All same base color. `filter: drop-shadow` on SVG icons for consistent rendering. No GPU effects -- the style is pure CSS shadow work.
+
+**iOS**: Dual SwiftUI `.shadow()` modifiers (light upper-left, dark lower-right). `.drawingGroup()` on complex nested shadows to prevent rendering artifacts.
+
+**Android**: `drawBehind` with two `drawRoundRect` calls (offset for each shadow direction).
+
+**Signature GPU technique**: None -- CSS box-shadow only. Complexity comes from the dual shadow system and consistent base color discipline.
+
+---
+
+## 7. Kinetic Typography
+**Web**: GSAP SplitText for character/word/line decomposition. `ScrollTrigger` for scroll-driven reveals. `stagger` values from MOTION.md. CSS `animation-timeline: scroll()` for simple cases. Variable font weight animation: `font-variation-settings: 'wght' ${value}` animated via GSAP or CSS.
+
+**Three.js text**: `TextGeometry` (requires FontLoader) for 3D text that responds to scroll or mouse. Use sparingly -- 3D text in Three.js is complex and has significant performance cost.
+
+**iOS**: `TimelineView` + `withAnimation` for scroll-triggered character reveals. SwiftUI's `contentTransition(.numericText())` for number transitions.
+
+**Android**: Roboto Flex `FontVariation.weight()` animation via `animateFloatAsState`. Character stagger via `LaunchedEffect` with `delay`.
+
+**Signature GPU technique (Web)**: GSAP SplitText + stagger. Variable font axis animation. The motion IS the style -- without it there is no style.
+
+---
+
+## 8. Futuristic / Sci-Fi
+**Web**: Three.js with post-processing is the correct implementation. `UnrealBloomPass` for glowing elements. Grid fragment shader (see MOTION.md). Particle system with `AdditiveBlending`. CSS `text-shadow` for 2D glow on text -- `0 0 8px var(--accent), 0 0 20px var(--accent)`. Custom cursor with `mix-blend-mode: difference`.
+
+**Three.js full setup**: Scene + grid shader plane + bloom post-processing + particle field + GSAP ScrollTrigger for camera movement. This is the only style where Three.js WebGL is essentially required to achieve the correct visual.
+
+**iOS**: Metal `.colorEffect()` shader for scanline/glow on specific surfaces. SwiftUI Canvas for particle fields. `TimelineView(.animation)` for continuous animation.
+
+**Android**: AGSL shader for glow and grid effects. `RenderEffect` chain (blur + color matrix) for bloom approximation.
+
+**Windows**: Win2D for the grid plane and particle system. `CompositionColorBrush` with animated `Color` for pulsing accent elements.
+
+**Signature GPU technique**: `UnrealBloomPass` (web) or equivalent glow shader (native). Without the bloom, neon elements look flat. Particles with `AdditiveBlending` for the energy field feel.
+
+---
+
+## 9. Bento Grid
+**Web**: CSS Grid for layout (no WebGL). GSAP for tile hover lift (`y: -4, boxShadow: '...'`). View Transitions API for smooth tile expand/collapse if tiles open into detail views. `clip-path` animations on featured tile if it expands.
+
+**iOS**: SwiftUI `LazyVGrid` + `matchedGeometryEffect` for tile expand transitions. `.spring(response: 0.35, dampingFraction: 0.7)` on hover/tap.
+
+**Android**: `LazyVerticalGrid` + `AnimatedContent` for tile state changes.
+
+**Signature GPU technique**: None heavy. The focus is CSS Grid layout precision and spring animations on interactions. `matchedGeometryEffect` (iOS) and shared element transitions (Android) for tile-to-detail.
+
+---
+
+## 10. Editorial / Structural
+**Web**: SVG for decorative rule elements. GSAP for scroll-triggered text reveals (line by line, not character by character -- this is editorial, not kinetic). CSS `clip-path` wipe reveals for section entry. No Three.js.
+
+**iOS**: SwiftUI Canvas for custom rule/divider elements. `.transition(.opacity.combined(with: .move(edge: .bottom)))` for content reveals.
+
+**Signature GPU technique**: CSS clip-path wipe reveals timed to scroll (ScrollTrigger, scrub). Decorative SVG ruled elements. No GPU effects beyond these -- editorial aesthetic means restraint.
+
+---
+
+## 11. Organic / Biomorphic
+**Web**: SVG `feTurbulence` + `feDisplacementMap` for liquid distortion on images/hover. Canvas 2D for animated blob backgrounds (noise-based organic shapes -- see WEB.md). `clip-path` with animated polygon for organic container shapes. CSS `mix-blend-mode: multiply` for color blending on layered organic shapes.
+
+**Three.js (optional)**: Noise-displaced geometry (see MOTION.md vertex shader). `SimplexNoise` applied to sphere/plane geometry for organic 3D forms.
+
+**iOS**: SwiftUI Canvas with noise-based animated blob shapes. `TimelineView` for continuous animation. Custom `Shape` conformance with organic bezier curves.
+
+**Android**: Compose Canvas with noise-displaced path drawing. AGSL turbulence shader for background texture.
+
+**Signature GPU technique**: SVG `feTurbulence` + `feDisplacementMap` for the liquid/organic distortion feel (web). Canvas 2D or Three.js noise-displaced shapes for animated organic forms.
+
+---
+
+## 12. Texture / Tactile
+**Web**: SVG `feTurbulence` filter referenced via CSS `filter: url(#noise)`. Applied as `::after` pseudo-element at 3-5% opacity with `mix-blend-mode: multiply` or `overlay`. This is the minimum required implementation -- without it the style is not applied. Canvas 2D for more complex procedural textures.
+
+**iOS**: SwiftUI Canvas drawing a noise pattern as background. Or: use a pre-rendered noise PNG at low opacity. `.drawingGroup()` for performance.
+
+**Android**: AGSL turbulence shader. Or pre-rendered noise texture as `Painter` at low alpha.
+
+**Windows**: Win2D `TurbulenceEffect` -- see WINDOWS.md for the exact implementation.
+
+**Signature GPU technique**: SVG `feTurbulence` (web) / AGSL turbulence (Android) / Win2D `TurbulenceEffect` (Windows). The grain texture IS the style -- without it there is no Texture/Tactile.
+
+---
+
+## 13. Y2K / Retro Computing
+**Web**: Three.js `FilmPass` for scanlines if using WebGL. CSS `repeating-linear-gradient` for pure-CSS scanlines. Custom fragment shader for the full CRT effect (barrel distortion, chromatic aberration, phosphor glow) -- see MOTION.md for the complete shader. CSS `filter: contrast(1.1) brightness(0.9)` as a minimal approximation. Monospace font throughout.
+
+**Three.js**: The CRT shader as a `ShaderPass` in post-processing gives the most authentic result. The barrel distortion alone is enough to signal CRT without heavy performance cost.
+
+**iOS**: Custom Metal fragment shader via `.colorEffect()` for CRT-style color treatment. SwiftUI Canvas for scanline overlays.
+
+**Android**: AGSL shader for chromatic aberration and scanlines.
+
+**Signature GPU technique**: CRT post-processing shader (barrel distortion + chromatic aberration + scanlines + phosphor tint). At minimum: CSS scanlines + monospace typography. Full implementation requires a custom GLSL/AGSL/Metal shader.
+
+---
+
+## 14. Calm / Anti-Distraction
+**Web**: No GPU effects. CSS `opacity` transitions only (200-300ms). `prefers-reduced-motion` respected by default since there's barely any motion to begin with. No Three.js, no GSAP (or minimal GSAP for slow fade sequences only). The absence of technique is the technique.
+
+**iOS**: `.animation(.easeInOut(duration: 0.3))` on opacity only. No spring physics. No Canvas or Metal.
+
+**Android**: `fadeIn()` + `fadeOut()` transitions only. No `spring()`.
+
+**Signature GPU technique**: None -- deliberately. Any GPU effect or complex animation is a failure of the style.
+
+---
+
 # Cross-Style Rules
+
 
 These apply regardless of which style is selected, on all three platforms.
 
