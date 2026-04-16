@@ -1,23 +1,28 @@
 # claude-skills
-My Claude Code skills setup. Assembled by a season design-engineer (me) in an attempt to automate higher quality baseline outputs in the human-design > agentic programmer realtionship.
+
+Claude Code skill files and a global CLAUDE.md. Built to stop re-explaining the same context in every session.
+
+Fork it. Strip what doesn't apply. Make it yours.
 
 ---
 
-
-## Files
+## Structure
 
 - `~/.claude/CLAUDE.md` — global config, loads on every session
-- `~/.claude/skills/APPLE.md` — iOS / iPadOS / macOS (SwiftUI)
-- `~/.claude/skills/ANDROID.md` — Android (Jetpack Compose)
-- `~/.claude/skills/WINDOWS.md` — Windows (WinUI 3)
-- `~/.claude/skills/WEB.md` — Web (Next.js / Astro)
-- `~/.claude/skills/MOTION.md` — animation, all platforms
-- `~/.claude/skills/FIGMA.md` — Figma design systems
-- `~/.claude/skills/SKETCH.md` — Sketch design systems
-- `~/.claude/skills/STYLES.md` — 14 visual styles, all platforms
-- `~/.claude/skills/AUDIT.md` — audit checklists
+- `~/.claude/skills/apple.md` — iOS / iPadOS / macOS (SwiftUI)
+- `~/.claude/skills/android.md` — Android (Jetpack Compose)
+- `~/.claude/skills/windows.md` — Windows (WinUI 3)
+- `~/.claude/skills/web.md` — Web (Next.js / Astro)
+- `~/.claude/skills/motion.md` — animation, all platforms
+- `~/.claude/skills/figma.md` — Figma design systems
+- `~/.claude/skills/sketch.md` — Sketch design systems
+- `~/.claude/skills/styles.md` — 14 visual styles, all platforms
+- `~/.claude/skills/color.md` — curated color library (Swiss + Bauhaus + modernist)
+- `~/.claude/skills/audit.md` — audit checklists
 
 ---
+
+## Files
 
 ### `CLAUDE.md`
 
@@ -71,6 +76,12 @@ Cross-platform animation deep spec. Read before writing animation code on any pl
 
 Physics foundations, spring vs ease curve decision logic (springs for user-triggered, ease for system-triggered), duration scale (83ms-700ms), when not to animate. Per-platform: iOS/SwiftUI spring API, KeyframeAnimator, PhaseAnimator, `@Animatable`, `matchedGeometryEffect`; Android/Compose AnimationSpec, M3E MotionScheme, variable font animation; Windows SpringNaturalMotionAnimation, ConnectedAnimation; Web: CSS native (compositor thread), scroll-driven animations, GSAP (timeline, ScrollTrigger, SplitText, Flip, cleanup requirements), Lenis, Three.js + WebGL. Cross-platform motion token table.
 
+### `COLOR.md`
+
+Curated color library. Read before specifying any color primitive values -- prevents inventing hex values from nothing.
+
+Two primary sources: the Swiss International Style / International Typographic Style (1950s–70s poster work by Müller-Brockmann, Hofmann, Ballmer, and Bill, as systematized in Fabian Burghardt's Swiss Style Color Picker), and the Bauhaus primary triad (Itten's `#C8302A / #E8C018 / #1E3878`). Extended with mid-century modernist palette and contemporary screen-optimized variants. ~50 named primitives across reds, blues, yellows, greens, neutrals, and accent ramps. Semantic role mappings for light and dark mode. WCAG contrast reference for all primary pairs. Color pairing logic from actual historical poster practice (yellow fails on white -- documented). TASTE.md overrides anything here once built.
+
 ### `AUDIT.md`
 
 Audit checklists: code (dead code, memory leaks, security, error handling, performance, deprecated APIs), UI (hardcoded values, design system coherence, responsive logic, animation), audio thread (allocations, blocking calls, ObjC messaging, cross-thread comms), security (key exposure, RLS, JWT, PII in logs), design files (canvas background, empty pages, token population, token naming vs code, component completeness, interactive wiring, platform coverage, screen completeness), Rust (unwrap, error types, clones, unsafe blocks), Rust toolchain (clippy -D warnings, cargo audit, cargo deny, cargo test).
@@ -82,7 +93,16 @@ Audit checklists: code (dead code, memory leaks, security, error handling, perfo
 ```bash
 cp CLAUDE.md ~/.claude/CLAUDE.md
 mkdir -p ~/.claude/skills
-cp AUDIT.md APPLE.md ANDROID.md WINDOWS.md FIGMA.md SKETCH.md STYLES.md MOTION.md WEB.md ~/.claude/skills/
+cp AUDIT.md   ~/.claude/skills/audit.md
+cp APPLE.md   ~/.claude/skills/apple.md
+cp ANDROID.md ~/.claude/skills/android.md
+cp WINDOWS.md ~/.claude/skills/windows.md
+cp FIGMA.md   ~/.claude/skills/figma.md
+cp SKETCH.md  ~/.claude/skills/sketch.md
+cp STYLES.md  ~/.claude/skills/styles.md
+cp MOTION.md  ~/.claude/skills/motion.md
+cp WEB.md     ~/.claude/skills/web.md
+cp COLOR.md   ~/.claude/skills/color.md
 ```
 
 CLAUDE.md loads automatically. Skill files are read on demand -- they don't all load at once, so they don't burn context on irrelevant content.
@@ -100,6 +120,7 @@ Motion or animation          → MOTION.md  (any platform)
 Sketch                       → SKETCH.md
 Figma design system          → FIGMA.md + STYLES.md
 Project has a visual style   → STYLES.md
+Color values needed          → COLOR.md
 Audit anything               → AUDIT.md
 ```
 
