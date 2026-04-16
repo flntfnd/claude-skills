@@ -135,6 +135,7 @@ When working on motion or animation (any platform): read ~/.claude/skills/motion
 When the project has a specific visual style (Neo-Brutalism, Glassmorphism, Bento Grid, etc.): read ~/.claude/skills/styles.md for token values and platform-specific implementation for that style.
 When specifying color values in any design work: read ~/.claude/skills/color.md for the curated palette before inventing hex values.
 When asked to audit anything: read ~/.claude/skills/audit.md before starting.
+When writing Rust (any context — services, CLIs, libraries, audio, FFI): read ~/.claude/skills/rust.md before writing any Rust code. The brief Rust conventions in this file are the floor; rust.md is the operational detail.
 
 # General
 - Comments are for complex code only. Don't narrate the obvious.
