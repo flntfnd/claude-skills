@@ -8,7 +8,7 @@ These lanes don't blur. Each service has one job.
 
 Vercel is frontend only. Anon key, RLS enforced, service_role never touches it.
 
-Railway is for backend compute: API servers, workers, long-running processes, anything heavy. service_role lives here. RLS is intentionally bypassed on Railway because Railway is the trusted backend. service_role never goes near the client.
+Railway is for backend compute: API servers, workers, long-running processes, anything heavy. service_role lives here. RLS is intentionally bypassed on Railway because Railway is the trusted backend. service_role never goes near the client. For standalone Railway services outside the Next.js request cycle, the `backend-conventions` skill is the operational detail (health checks, graceful shutdown, deployment config, background jobs); for Rust services specifically, pair it with `rust-conventions`.
 
 Supabase Auth is the auth layer, full stop. Use @supabase/ssr for cookie-based sessions. Don't roll custom JWTs when Supabase Auth already handles it.
 

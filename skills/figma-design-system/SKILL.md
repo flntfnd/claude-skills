@@ -19,14 +19,11 @@ Process rules for iOS/iPadOS/macOS, Android, and Web design systems in Figma, la
 | Applying a visual style to an existing design (restructure, not a token swap) | [reference/applying-styles.md](reference/applying-styles.md) |
 | Build-from-scratch and replicate-existing-app order of operations, file structure, minimum screen set, Dev Mode handoff, accessibility, anti-patterns | [reference/workflows-and-handoff.md](reference/workflows-and-handoff.md) |
 
-## The three hard gates
+## The hard gates
 
-These are checked on every single Figma session, not just at project start. They belong here, not in a reference file, because skipping any one of them is the single most common failure mode.
+Pull in the `design-tool-gates` skill for the shared policy checked every session across all four design tools (dark canvas first, no empty pages plus the minimum screen set, token names must match the codebase, both light and dark mode). What follows is the Figma-specific execution of those gates.
 
-### 1. Dark canvas first
-
-Not optional, not skippable. The canvas background must be dark before any frame, component, or token is created. Do this before anything else, on every page in the file.
-
+**Dark canvas, via MCP:**
 ```javascript
 // Run on every page in the file
 figma.currentPage.backgrounds = [{
@@ -35,20 +32,11 @@ figma.currentPage.backgrounds = [{
   opacity: 1
 }];
 ```
+Manually, if the MCP path doesn't cover it: right-click empty canvas → Background color → `#1E1E1E`, on every page before creating content on that page. Verify: the canvas surrounding all frames is dark grey, never white.
 
-Manually, if the MCP path doesn't cover it: right-click empty canvas → Background color → `#1E1E1E`, on every page before creating content on that page.
+**No empty pages:** if a 🎨 Tokens page exists, the variable collections are on it before the 🎛 Components page is touched.
 
-**Verify:** the canvas surrounding all frames is dark grey, never white. If it's white, stop and fix it before continuing.
-
-### 2. No empty pages
-
-A page is never created as a placeholder to fill later. The workflow is create → populate fully → move to the next page. If a 🎨 Tokens page exists, the variable collections are on it before the 🎛 Components page is touched. An empty page in the file is a failure state, not a step in the process.
-
-### 3. Token names must match the codebase
-
-If a platform app already exists, the token names in Figma must match the token names in code exactly -- for Apple platforms, read the `apple-platform` skill for the existing token architecture; for Android, read the Android platform design skill. Use those names. Never invent names that diverge from what's already shipping in code. Mismatched names create a permanent design-to-code gap that gets manually bridged on every handoff.
-
-If the library doesn't exist yet, build it from the token architecture in [reference/token-architecture.md](reference/token-architecture.md).
+**Token names:** read `apple-platform`, `android-platform`, or `web-platform` for the existing token architecture and use those names verbatim. If the library doesn't exist yet, build it from [reference/token-architecture.md](reference/token-architecture.md).
 
 ## Design style
 

@@ -60,14 +60,7 @@ When the product exists in code but no Sketch file exists, or the existing file 
 
 **Step 4: Build Symbols -- populate now, all states on creation.** Recreate every component correctly: proper naming, Smart Layout, overrides limited to what needs customizing, Color Variables and Text Styles applied throughout, no hardcoded values. Start with atoms; the 🎛 Symbols page must contain actual Symbols before moving to screens.
 
-**Step 5: Rebuild screens -- all platforms, minimum screen set.** Every platform in the project gets a representative screen set -- covering one platform, or only login screens, is not acceptable.
-
-Minimum screen set per platform:
-- **Authentication** — login, signup, forgot password, verification
-- **Home / main content** — default, loading, empty, error states
-- **Detail** — item detail view with all content variants (full, partial, long text, short text)
-- **Settings / profile**
-- **Navigation** — the nav shell in each of its states (collapsed, expanded, active tab)
+**Step 5: Rebuild screens -- all platforms, minimum screen set.** Every platform in the project gets a representative screen set -- covering one platform, or only login screens, is not acceptable. See the `design-tool-gates` skill for the minimum screen set per platform and the light/dark requirement.
 
 Every screen in both light and dark mode, using Symbol instances, not freehand drawing. Every hardcoded value found during this step means a token or Color Variable is missing.
 

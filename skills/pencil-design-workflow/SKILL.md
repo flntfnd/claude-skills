@@ -24,13 +24,15 @@ This machine also has Pencil-vendor-shipped skills at `~/.pencil/skills/` — `b
 
 ## Hard gates — check every session
 
-1. **No empty frames.** Same rule as Figma, Sketch, and Paper — frames exist when populated. Minimum screen set per platform: Authentication (login, signup, forgot password), Home/main (default + loading + empty + error), Detail view, Settings/profile, Navigation shell.
+Pull in the `design-tool-gates` skill for the shared policy checked every session across all four design tools (dark canvas first, no empty pages plus the minimum screen set, token names must match the codebase, both light and dark mode). Pencil-specific execution:
+
+1. **No empty frames.** Frames exist when populated — see `design-tool-gates` for the minimum screen set per platform.
 2. **Light and dark via theme columns.** Add a "dark" column alongside "default"/"light" in the Variables panel. Flip the theme column and bound elements update — this is how light/dark works in Pencil today.
 3. **Read before writing.** Call `get_app_state` (schema + canvas state) before any structural change. Agents writing blindly into unknown canvas state produce broken layouts.
 
-## Status (August 2026)
+## Status
 
-Still early access, still free — the product's own site states "pen.dev is currently free," with a note that paid plans may appear in the future with advance notice. No evidence of a Pencil-side paid tier having launched as of this writing; the real ongoing cost is the Claude Code subscription that drives the AI features. [Inference] third-party trackers cite 100,000+ users since a ~January 2026 public launch — treat the exact figure as approximate.
+Still early access. Check pen.dev directly for current pricing before assuming it's free -- the product has stated paid plans may appear with advance notice, and this is exactly the kind of fact that goes stale silently. The real ongoing cost regardless of Pencil's own pricing is the Claude Code subscription that drives the AI features.
 
 ## Installation
 

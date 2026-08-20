@@ -13,8 +13,10 @@ The whole pitch is the absence of translation. Spacing isn't "looks about 16px,"
 
 ## Hard gates — check every session
 
+Pull in the `design-tool-gates` skill for the shared policy checked every session across all four design tools (dark canvas first, no empty pages plus the minimum screen set, token names must match the codebase, both light and dark mode). Paper-specific execution:
+
 1. **Dark canvas first.** Paper defaults to dark. If a canvas is white: click empty canvas area → Background panel → set to `#1A1A1A`.
-2. **No empty artboards.** An artboard exists when it's populated. A file with 12 empty artboards labeled "Screen 1"–"Screen 12" is clutter, not a starting point. Minimum artboard set per project: Authentication (login, signup, forgot password), Home/main (default, loading, empty, error states), Detail view, Settings/profile, Navigation shell.
+2. **No empty artboards.** An artboard exists when it's populated — see `design-tool-gates` for the minimum artboard set per project.
 3. **Both light and dark mode** for each artboard before a design is considered complete.
 
 ## MCP setup
@@ -233,28 +235,11 @@ After the agent generates code from a frame, screenshot the rendered output and 
 
 **Variables over hardcoded values.** No element should have a hardcoded hex fill if a variable exists for it. Use `get_computed_styles` to audit before handoff — `background: #F5F3EE` instead of `background: var(--color-background)` means a binding is missing.
 
-## Status and pricing (August 2026)
+## Status, roadmap, and pricing
 
-**Recently shipped** (paper.design/build-log): threaded comments for team/agent collaboration, desktop tabs (multiple files open with background agent processing), folders/subfolders, a pen tool (`P`) for SVG path creation with node add/delete/move, PDF export, Figma copy/paste with SVG+image support.
+Paper is open alpha and ships to production almost daily — any specific feature-shipped or roadmap-stage claim from a past session is a snapshot, not a fact. Check **paper.design/build-log** for what's actually shipped and **paper.design/roadmap** for current stage (in progress / coming soon / planned) before telling a user a feature exists or doesn't. Recent build-log themes worth knowing the shape of, not the exact status of: real-time collaboration features (comments, multiplayer tabs), a pen tool for SVG paths, PDF export, and expanding Figma paste fidelity — verify current state rather than assuming any of these are still "new."
 
-**Roadmap — in progress:** using your own code components (no second design system), native Tailwind CSS rendering and idiomatic Tailwind I/O, themes/tokens with `calc`/`color-mix`/blend modes, hosting assets from Paper (CDN-style links), full vector editing, Paper Shaders expansion, full sharing settings.
-
-**Roadmap — coming soon:** components with slots (props and slots, code-aligned), icon packs, shadcn integration.
-
-**Roadmap — planned:** CSS Grid in canvas, a script/prompt engine, right-click → Remix, generated videos, Lottie/Rive/YouTube embeds, particle system, Three.js islands, advanced image filters.
-
-**Pricing** (paper.design/pricing, checked August 2026 — alpha-stage pricing moves, re-verify before quoting a number to anyone):
-
-| | Free | Pro | Organizations |
-|---|---|---|---|
-| Price | $0 | $20/mo ($16/mo annual) | Custom |
-| MCP calls | 100/week | 1M/week | Custom |
-| Image gen | Limited | 100x Free | Custom |
-| Max image size | 25 MB | 100 MB | Custom |
-| Video export | No | Yes | Yes |
-| Editors/viewers | Unlimited, free | — | SAML/SSO, admin controls |
-
-Known issue: after upgrading to Pro, MCP limits may not reset — fix is updating Paper Desktop (`About > Check for updates`) and restarting the app.
+**Pricing** exists as free / paid-individual / organization tiers — check **paper.design/pricing** directly for current numbers (MCP call limits, image gen quotas, video export access, seat pricing). Alpha-stage pricing moves; never quote a specific number to a user without checking the live page first. If MCP limits don't reset after a plan upgrade, update Paper Desktop (`About > Check for updates`) and restart — that's been a recurring known issue.
 
 For client-facing production work with strict delivery, wait for Paper to exit open alpha or accept that APIs change. For internal tooling, prototypes, or solo/small-team AI-first work, it's usable today.
 

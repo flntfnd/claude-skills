@@ -19,35 +19,22 @@ Sketch has no equivalent of an official Figma-plugin-style MCP skill installed o
 | Build-from-scratch and replicate-existing-app order of operations, file structure, minimum screen set, Dev handoff, accessibility, anti-patterns | [reference/workflows-and-handoff.md](reference/workflows-and-handoff.md) |
 | Sketch-specific execution technique for all 14 visual styles (Symbols, Layer Styles, Color Variables per style) | [reference/style-implementations.md](reference/style-implementations.md) |
 
-## The three hard gates
+## The hard gates
 
-Checked on every single Sketch session, not just at project start. Skipping any one of these is the single most common failure mode.
+Pull in the `design-tool-gates` skill for the shared policy checked every session across all four design tools (dark canvas first, no empty pages plus the minimum screen set, token names must match the codebase, both light and dark mode). What follows is the Sketch-specific execution of those gates.
 
-### 1. Dark canvas first
-
-Not optional, not skippable. The canvas background must be dark before any Artboard, Symbol, or token is created.
-
-**Via MCP (`run_code`):**
+**Dark canvas, via MCP (`run_code`):**
 ```javascript
 const document = context.document;
 const page = document.currentPage();
 const darkGrey = MSColor.colorWithRed_green_blue_alpha(0.118, 0.118, 0.118, 1.0);
 page.setCanvasColor(darkGrey);
 ```
+If `setCanvasColor` is unavailable in the running Sketch version, use **File > Document Settings → Canvas Color → `#1E1E1E`** manually. For individual Artboard backgrounds: select the Artboard → Inspector → Background Color → `#1E1E1E` (or transparent if the Artboard background shouldn't appear in exports). Verify: the canvas surrounding all Artboards is dark grey, never white.
 
-If `setCanvasColor` is unavailable in the running Sketch version, use **File > Document Settings → Canvas Color → `#1E1E1E`** manually. For individual Artboard backgrounds: select the Artboard → Inspector → Background Color → `#1E1E1E` (or transparent if the Artboard background shouldn't appear in exports).
+**No empty pages:** if a 🎨 Tokens page exists, the Color Variables and Tokens Studio sets go on it before the 🎛 Symbols page is touched.
 
-**Verify:** the canvas surrounding all Artboards is dark grey, never white. If it's white, stop and fix it before proceeding.
-
-### 2. No empty pages
-
-A page is never created as a placeholder to fill later. The workflow is create → populate fully → move to the next page. If a 🎨 Tokens page exists, the Color Variables and Tokens Studio sets go on it before the 🎛 Symbols page is touched. An empty page is a failure state, not a step in the process.
-
-### 3. Token names must match the codebase
-
-If a platform app already exists, the Color Variable and token names in Sketch must match the names in code exactly -- for Apple platforms, read the `apple-platform` skill for the existing token architecture; for Android, read the Android platform design skill. Use those names. Never invent names that diverge from what's already shipping. Mismatched names create a permanent design-to-code gap that gets manually bridged on every handoff.
-
-If the library doesn't exist yet, build it from [reference/token-architecture.md](reference/token-architecture.md).
+**Token names:** read `apple-platform`, `android-platform`, or `web-platform` for the existing token architecture and use those names verbatim. If the library doesn't exist yet, build it from [reference/token-architecture.md](reference/token-architecture.md).
 
 ## MCP Server
 

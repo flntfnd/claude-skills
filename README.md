@@ -16,10 +16,12 @@ skills/windows-platform/SKILL.md              Windows                   (WinUI, 
 skills/web-platform/SKILL.md                  Web                       (Next.js, Astro, Supabase)
 skills/motion-design/SKILL.md                 Animation                 (all platforms, GSAP, Three.js)
 skills/rust-conventions/SKILL.md              Rust                      (services, CLIs, audio, FFI)
+skills/backend-conventions/SKILL.md           Railway backend services  (bare API servers, workers, cron -- non-Next.js)
 skills/figma-design-system/SKILL.md           Figma design systems
 skills/sketch-design-system/SKILL.md          Sketch design systems
 skills/paper-design-workflow/SKILL.md         Paper                     (paper.design)
 skills/pencil-design-workflow/SKILL.md        Pencil                    (pen.dev)
+skills/design-tool-gates/SKILL.md             Shared design-tool policy (dark canvas, empty-page, token-naming, light/dark gates)
 skills/visual-styles/SKILL.md                 14 visual styles          (all platforms)
 skills/color-system/SKILL.md                  Curated color library     (Swiss + Bauhaus + modernist)
 skills/code-audit/SKILL.md                    Audit checklists
@@ -62,13 +64,17 @@ HTML5, modern CSS, TypeScript, Next.js App Router (Cache Components, `"use cache
 
 Cross-platform animation: physics vocabulary and the spring-vs-ease decision inline in `SKILL.md`, then per-platform reference files (SwiftUI, Compose, WinUI, CSS/View Transitions, GSAP, Three.js core, Three.js shaders/particles). GSAP's plugin set (ScrollTrigger, SplitText, Flip, MorphSVG) is fully free now — no license key needed.
 
+### `design-tool-gates`
+
+The four hard gates shared across every design tool — dark canvas first, no empty pages/frames/artboards plus the minimum screen set (Auth, Home w/ 4 states, Detail, Settings, Nav shell), token names must match the codebase, both light and dark mode required. Extracted out of `figma-design-system`, `sketch-design-system`, `paper-design-workflow`, and `pencil-design-workflow`, which used to each carry a near-verbatim copy of this policy — changing the policy meant editing it in four places by hand. Now it lives once; the four tool skills hold only the tool-specific mechanics for executing it.
+
 ### `figma-design-system` / `sketch-design-system`
 
-Rob's opinionated design-system process, not MCP tool mechanics. Dark-canvas-first, no-empty-pages, and token-names-must-match-codebase are hard gates checked every session. `figma-design-system` explicitly defers mechanical `use_figma`/`get_design_context` call syntax to the installed `figma:figma-use` plugin skills rather than duplicating them; `sketch-design-system` stays self-contained since no equivalent plugin exists, and carries the full Sketch execution technique for all 14 visual styles.
+Rob's opinionated design-system process, not MCP tool mechanics. Pulls in `design-tool-gates` for the shared session-start checklist. `figma-design-system` explicitly defers mechanical `use_figma`/`get_design_context` call syntax to the installed `figma:figma-use` plugin skills rather than duplicating them; `sketch-design-system` stays self-contained since no equivalent plugin exists, and carries the full Sketch execution technique for all 14 visual styles.
 
 ### `paper-design-workflow` / `pencil-design-workflow`
 
-Both tools ship fast — verify against their own changelogs before a serious session, not just this skill. `paper-design-workflow` covers the HTML/CSS-native canvas, MCP tool surface, Paper Snapshot, shaders, and current pricing. `pencil-design-workflow` covers `.pen` files in Git, the MCP tool surface (which changed completely since this repo's last touch — old tool names are kept in a legacy block), Slots, and the "use the pencil mcp server" terminal-prompt requirement. It's a mechanics skill; pair it with the installed `better-*` Pencil skills (`better-colors`, `better-typography`, `better-layout`, etc.) for design-quality judgment — those are a separate, complementary layer.
+Both tools ship fast — verify against their own changelogs before a serious session, not just this skill. Pulls in `design-tool-gates` for the shared checklist. `paper-design-workflow` covers the HTML/CSS-native canvas, MCP tool surface, Paper Snapshot, and shaders; pricing and AI-model-lineup claims point at the live pages instead of restating numbers that go stale within weeks. `pencil-design-workflow` covers `.pen` files in Git, the MCP tool surface (which changed completely since this repo's last touch — old tool names are kept in a legacy block), Slots, and the "use the pencil mcp server" terminal-prompt requirement. It's a mechanics skill; pair it with the installed `better-*` Pencil skills (`better-colors`, `better-typography`, `better-layout`, etc.) for design-quality judgment — those are a separate, complementary layer.
 
 ### `visual-styles`
 
@@ -85,6 +91,10 @@ Seven-category audit checklist: code, UI/design-system coherence, audio thread, 
 ### `rust-conventions`
 
 Extends CLAUDE.md's floor rules (no bare `unwrap()`, `thiserror`/`anyhow` split, no `clone()`-to-dodge-the-borrow-checker) with the operational layer: edition/toolchain pinning, CI gates, async/Tokio discipline, the axum/sqlx/tower web stack, `tracing` observability, realtime audio-thread crates, testing, project structure, a ~30-category crate selection guide, and a 12-item audit checklist.
+
+### `backend-conventions`
+
+Standalone Railway backend work that isn't behind a Next.js route — bare API servers, background workers, cron jobs, queue consumers. Covers service structure and health checks, graceful shutdown (SIGTERM/draining), `railway.json`/Railpack/Nixpacks/Dockerfile deployment config, the Supabase `service_role` admin client pattern and why RLS-bypass is safe here per the lane rules, connection pooling via Supavisor, Railway's native cron jobs, background job/queue patterns with retry and idempotency, structured logging, and monorepo layout. Explicitly defers to `rust-conventions` when the language is Rust, and to `web-platform`'s Supabase integration reference for anything inside the Next.js request cycle — this skill exists for everything outside both of those.
 
 ---
 

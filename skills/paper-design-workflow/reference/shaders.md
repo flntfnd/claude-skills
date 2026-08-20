@@ -29,12 +29,8 @@ Paper Shaders expansion is still listed "in progress" on the roadmap as of Augus
 
 ## AI Image Generation (in-canvas)
 
-Model lineup rotates — Paper ships updates almost weekly. As of the April 2026 build log, the shipped set is:
+The model lineup rotates roughly weekly — a raster generator, a Gemini-powered raster alternative, and an SVG generator have all been part of the set at various points, but naming a specific model here would be wrong within a month. Check the Effects/Generate panel in Paper Desktop for what's actually available before telling a user what models exist; don't rely on training data or a past session's answer.
 
-- **GPT Image 2** — raster generation
-- **Nano Banana 2** — raster generation (Gemini-powered)
-- **Quiver Arrow 1.1** — SVG generation
-
-Hotkeys: `Shift+Cmd+I` generates raster images, `Shift+Cmd+J` generates SVG. (Earlier builds, through ~Dec 2025, shipped with Flux 2, Nano Banana Pro, OpenAI Image Edit 1.5, and Seedream 4.5 — superseded by the above. Don't assume either list is still current; check the Effects/Generate panel in Paper Desktop for what's actually available before telling a user what models exist.)
+Hotkeys: `Shift+Cmd+I` generates raster images, `Shift+Cmd+J` generates SVG.
 
 Image edits preserve original aspect ratio when possible. Generated images get placed intelligently on the canvas. The Fill panel accepts images directly and composes them with other fills. HEIC/HEIF supported.
