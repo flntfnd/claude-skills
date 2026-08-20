@@ -1,0 +1,1154 @@
+# SKETCH.md
+Sketch design systems for iOS, iPadOS, macOS, Android, and Web.
+Requires Sketch 2025.2.4 or later. Direct download from sketch.com only -- not Mac App Store.
+
+---
+
+# STEP 0 — Before anything else: dark canvas
+
+This is not optional and not skippable. The canvas background must be dark before any Artboard, Symbol, or token is created.
+
+**Via MCP (run_code):**
+```javascript
+// Set canvas background via SketchAPI
+const document = context.document;
+const page = document.currentPage();
+
+// SketchAPI color object (RGBA, values 0-1)
+const darkGrey = MSColor.colorWithRed_green_blue_alpha(0.118, 0.118, 0.118, 1.0);
+page.setCanvasColor(darkGrey);
+```
+
+If `setCanvasColor` is unavailable in the current Sketch version, use Document Settings manually: **File > Document Settings → Canvas Color → `#1E1E1E`**. Verify before proceeding.
+
+**Individual Artboard backgrounds:** select each Artboard → Inspector → Background Color → `#1E1E1E` (or transparent if the artboard background should not appear in exports).
+
+**Verify:** The canvas surrounding all Artboards must be dark grey, not white. If it's white, stop and fix it before proceeding.
+
+---
+
+# STEP 1 — MCP Server
+
+All Sketch work uses the Sketch MCP server. The server must be running before any AI work begins.
+
+**Start:** In Sketch, press `⌘K` → type "MCP" → choose **Start MCP Server**. Allow local network access when macOS prompts.
+
+**Connect:**
+```bash
+claude mcp add --transport http sketch http://localhost:31126/mcp
+```
+
+Before creating or editing anything, read the existing document first. Use `get_selection_as_image` on relevant frames and `run_code` to inspect the Symbol library and Color Variables. Never create parallel systems next to existing ones.
+
+If an iOS app already exists: the token names in Sketch must match the token names in the Swift code exactly. Read `~/.claude/skills/APPLE.md` to get the existing token architecture. Use those names. Do not invent new names that diverge from what's in code.
+
+---
+
+# STEP 2 — Design style
+
+Before building any Symbols or Styles, confirm the design style for the project. Read `~/.claude/skills/STYLES.md` for token values and visual style definitions. Sketch-specific implementations for each of the 14 styles are at the bottom of this file.
+
+---
+
+# NO EMPTY PAGES
+
+Pages are populated immediately when created. A page is never created as a placeholder to fill later.
+
+1. Create page
+2. Populate it fully
+3. Move to the next page
+
+If you create a 🎨 Tokens page, the Color Variables and Tokens Studio sets go on it before you touch 🎛 Symbols. If you create a 🎛 Symbols page, atomic Symbols go on it before anything else. An empty page in the Sketch document is a failure state, not a step in the process.
+
+---
+
+# Sketch vs Figma: Terminology Map
+
+| Figma | Sketch |
+|---|---|
+| Component | Symbol |
+| Component set / variants | Symbol group (multiple Symbol Masters organized by folder name) |
+| Component properties | Symbol Overrides |
+| Instance | Symbol Instance |
+| Variable (color) | Color Variable |
+| Variable (number/string/boolean) | No native equivalent -- use Tokens Studio plugin |
+| Modes (light/dark) | Token Sets in Tokens Studio |
+| Auto Layout | Smart Layout (limited) |
+| Styles | Shared Styles (Text Styles + Layer Styles) |
+| Library | Sketch Library (.sketch file) |
+| Frame | Artboard |
+| Slot | No native equivalent -- use nested Symbols with exposed overrides |
+
+---
+
+# Philosophy
+
+Same as the Figma system: design system first, components second, screens last. Tokens define everything before a single Symbol is created.
+
+Design everything. Every screen, every state, every edge case. Empty, loading, error, disabled, partial content -- all of it. Sketch designs handed to engineering must be pixel perfect and complete.
+
+---
+
+# File Structure
+
+```
+Page: 🎨 Tokens          — Color Variables documented, Tokens Studio setup
+Page: 🔤 Typography       — Text Styles, type scale specimens
+Page: 🎛 Symbols          — all Symbol Masters, organized by category
+Page: 📐 Patterns         — composed layouts, navigation shells
+Page: 📱 iOS / iPadOS     — platform screens
+Page: 🤖 Android          — platform screens
+Page: 🌐 Web              — platform screens
+Page: 🚢 Handoff          — engineering-ready specs
+Page: 🗄 Archive          — deprecated Symbols (never delete, archive)
+```
+
+Only create platform pages for platforms the project actually targets. If the project is iOS only, don't create an Android page. If it targets iOS and Android, both platform pages must be populated -- not just one. A platform page that exists in the file must have content.
+
+Naming convention for Symbol Masters uses `/` as hierarchy separator. Sketch renders this as nested folders in the Insert panel:
+
+```
+Button/Primary/Default
+Button/Primary/Hover
+Button/Primary/Disabled
+Button/Secondary/Default
+Card/Default
+Card/Selected
+Icon/16/Arrow/Right
+Icon/24/Arrow/Right
+```
+
+---
+
+# Color Variables
+
+Sketch's Color Variables are the native color token system. They adapt to light/dark mode and export as CSS or JSON via Color Tokens.
+
+## Setting Up Color Variables
+
+Color Variables are defined in **View > Color Variables** (or the Inspector when a color swatch is selected). They live at the document or Library level.
+
+Organize with the same three-tier structure as the Figma system, using `/` hierarchy:
+
+```
+Primitive/Blue/50
+Primitive/Blue/100
+Primitive/Blue/500
+Primitive/Blue/900
+
+Semantic/Background/Primary
+Semantic/Background/Secondary
+Semantic/Text/Primary
+Semantic/Text/Secondary
+Semantic/Border/Default
+Semantic/Interactive/Primary
+Semantic/Status/Error
+Semantic/Status/Success
+```
+
+Semantic variables reference primitive values. When you update a primitive, every semantic token that references it updates automatically.
+
+## Light and Dark Mode
+
+Sketch Color Variables support light and dark appearances natively. Each variable has a Light and Dark value. Toggle appearance in **View > Appearance** to preview.
+
+Design in dark mode first. If it holds in dark, it almost always holds in light.
+
+## Exporting Color Tokens
+
+Color Tokens export from the web app (sketch.com). Go to your document or Library, open Color Variables, and export as:
+- CSS: outputs CSS custom properties
+- JSON: outputs Amazon Style Dictionary format
+
+This is the handoff artifact for engineering. Keep it up to date with every Color Variable change.
+
+---
+
+# Beyond Color: Tokens Studio
+
+Sketch's native Color Variables only cover color. For spacing, radius, typography, and motion tokens, use the **Tokens Studio** plugin (formerly Style Dictionary Studio).
+
+Tokens Studio allows:
+- Full W3C-compliant design token management
+- Token sets for light/dark mode, platforms, density
+- Export to CSS, JSON, Style Dictionary, or direct sync to GitHub
+- Apply tokens to layers directly from the plugin panel
+
+## Token Sets Structure
+
+In Tokens Studio, organize into sets that map to the three-tier system:
+
+```
+global/primitives    — raw values
+global/semantic      — aliased semantic tokens
+modes/light          — light mode overrides
+modes/dark           — dark mode overrides
+platforms/ios        — iOS-specific overrides
+platforms/android    — Android-specific overrides
+```
+
+Enable multiple sets simultaneously. The active set stack determines the final resolved values.
+
+## Applying Tokens
+
+Select a layer, open Tokens Studio, and apply tokens by clicking the token name next to the relevant property (fill, border, radius, spacing, etc.). Applied tokens appear as badges on the layer in the plugin panel.
+
+Never apply primitive tokens directly to layers. Always apply semantic tokens.
+
+---
+
+# Typography
+
+## Text Styles
+
+Text Styles in Sketch correspond to text style variables in Figma. Create one Text Style per semantic role:
+
+```
+Display/Large
+Display/Small
+Title/Large
+Title/Medium
+Title/Small
+Headline
+Body
+Callout
+Subheadline
+Footnote
+Caption
+Label/Large
+Label/Medium
+Label/Small
+```
+
+Each Text Style should reference a Color Variable for its text color, not a hardcoded hex value. Set the text color of the style to the appropriate semantic Color Variable (`Semantic/Text/Primary` for primary text, etc.).
+
+## Platform Type Scales
+
+Create platform variants by prefixing style names where the scale differs:
+
+```
+iOS/Display/Large       — 40pt, SF Pro
+iOS/Body                — 17pt, SF Pro
+Android/Display/Large   — 40sp, Roboto Flex
+Android/Body            — 16sp, Roboto
+Web/Display/Large       — 40px, Inter
+Web/Body                — 16px, Inter
+```
+
+---
+
+# Symbols
+
+Symbols are the component system in Sketch. A Symbol Master is the source of truth. Symbol Instances are placed copies that inherit from the master and can be customized via Overrides.
+
+## Creating Symbols
+
+1. Design the default state of the component
+2. Select all layers
+3. **Layer > Create Symbol** (`⌘⌥K`)
+4. Name using the `/` hierarchy convention
+5. Enable "Send to Symbols Page" to keep the master organized
+
+## Symbol Overrides
+
+Overrides are how Symbol instances are customized without detaching. They appear in the right-panel Inspector when an instance is selected.
+
+Available override types:
+- Text content (any text layer inside the Symbol)
+- Image fills
+- Nested Symbol swaps (replace a nested Symbol with another from the same group)
+- Color Variable overrides (via the fill override)
+- Layer visibility (show/hide layers within the instance)
+- Text Style overrides
+
+Limit exposed overrides to what designers should actually customize. Lock or hide internal layers that shouldn't be changed.
+
+## Variants via Symbol Groups
+
+Sketch doesn't have a Figma-style variants panel. Handle variants by naming Symbol Masters in the same group:
+
+```
+Button/Primary/Default
+Button/Primary/Hover
+Button/Primary/Pressed
+Button/Primary/Disabled
+Button/Primary/Loading
+```
+
+All masters in the `Button/Primary/` group will appear as swappable options in the Override dropdown when a `Button/Primary/Default` instance is selected.
+
+## Smart Layout
+
+Smart Layout is Sketch's partial equivalent of Figma's Auto Layout. Apply it to Symbols to control how they resize:
+
+- **Horizontal (Left to Right / Right to Left)**: elements resize and reflow horizontally
+- **Vertical (Top to Bottom / Bottom to Top)**: elements resize vertically
+- **Fixed**: element doesn't resize
+
+Smart Layout is less capable than Figma's Auto Layout. For complex responsive behavior, use nested Symbols with fixed dimensions and rely on pinning constraints.
+
+## Pinning and Resizing
+
+For responsive behavior within a Symbol, use pin constraints:
+- Pin to edges (left, right, top, bottom) to keep elements anchored during resize
+- Fixed width/height for elements that should not stretch
+- Scale for elements that should proportionally resize
+
+---
+
+# Libraries
+
+Libraries are the mechanism for sharing Symbols, Styles, and Color Variables across files.
+
+## Setting Up a Library
+
+1. Create a dedicated Sketch file for the design system (e.g., `design-system.sketch`)
+2. Build all Symbol Masters, Color Variables, and Shared Styles in this file
+3. Go to **Sketch > Settings > Libraries**
+4. Click **Add Library** and select the file
+
+Any file that adds this Library gets access to all published Symbols, Styles, and Color Variables.
+
+## Updating Libraries
+
+When the Library file changes, Sketch prompts connected files to update. Accept updates when the design system changes. Don't defer updates -- stale library connections cause inconsistency.
+
+## Library Sync via MCP
+
+Use `run_code` with the SketchAPI to inspect Library connections and verify all instances in a file are linked to the correct library:
+
+```javascript
+// via run_code
+const doc = sketch.getSelectedDocument();
+const libraries = sketch.getLibraries();
+// Check for detached symbols not linked to library
+const allLayers = doc.pages.flatMap(p => p.layers);
+// Audit and report
+```
+
+---
+
+# Glassmorphism in Sketch
+
+Sketch does not have a native glass effect. Apple's Liquid Glass as defined in iOS 26 is not replicable natively in Sketch. Use the manual layering technique for navigation elements that require a glass treatment.
+
+## Manual Glass Technique
+
+Layer stack (bottom to top):
+
+1. **Background content**: the image, gradient, or rich content that shows through the glass. Must be present -- glass over a flat white background shows nothing.
+
+2. **Frost layer**: a rectangle the size of the glass element.
+   - Fill: white at 0% opacity (transparent)
+   - Effect: Background Blur, 12-20px for nav bars, 30-50px for sheets
+   - This is the frosted appearance
+
+3. **Fill layer**: same rectangle, above the frost layer.
+   - Fill: white at 8-15% opacity for `.regular` glass
+   - Fill: white at 4-8% opacity for `.clear` glass
+   - Layer opacity: 100% (opacity on the fill only)
+
+4. **Highlight stroke**: same rectangle.
+   - No fill
+   - Border: inside, 1px, white at 20-25% opacity
+   - This is the edge highlight
+
+5. **Content layer**: text, icons, whatever sits on top of the glass
+
+6. **Shadow**: drop shadow on the glass frame rectangle
+   - Color: black at 12-18% opacity
+   - Offset: 0x, 4-8y
+   - Blur: 16-24px
+
+## Light Angle Consistency
+
+Sketched highlight strokes simulate the light source. Keep all glass elements using the same light angle across the file (upper-left: highlights on top-left edges, shadows on bottom-right).
+
+## Glass Component as Symbol
+
+Wrap the full layer stack into a Symbol. Expose overrides for:
+- Background image/content (nested Symbol)
+- Frost intensity (layer visibility toggle for light/medium/heavy frost variants)
+- Content (nested Symbol for the content that sits on the glass)
+
+---
+
+# Building a Design System from Scratch in Sketch
+
+## Order of Operations
+
+Each step is complete when the content exists in Sketch, not when the page has been created. Do not move to the next step until the current step is done.
+
+1. **Define brand values** — primary color, neutral palette, typeface. If an iOS or Android app already exists, read `~/.claude/skills/APPLE.md` or `~/.claude/skills/ANDROID.md` and extract the existing token names. Use those names exactly in Sketch. Do not invent names that diverge from what's in code.
+
+2. **Set up Color Variables — populate now** — primitives first, then semantic aliases. Both light and dark values for every semantic variable. The 🎨 Tokens page is not done until these variables exist and are documented. No Symbols until this step is complete.
+
+3. **Install Tokens Studio — populate now** — set up token sets for spacing, radius, typography sizes, and motion. Apply the token values. An empty Tokens Studio panel is not a completed step.
+
+4. **Create Text Styles — populate now** — one per semantic role, referencing semantic Color Variables for text color. Every text style defined and named before moving on.
+
+5. **Create Layer Styles** — for common fills, borders, and shadows that repeat across components.
+
+6. **Build atomic Symbols — populate now, all states on creation** — Button, Input, Checkbox, Toggle, Badge, Chip, Icon Button. Every Symbol gets all state variants created immediately. Use Color Variables and Text Styles throughout -- no hardcoded values. The 🎛 Symbols page is not done until atomic Symbols exist on it. If it's empty, step 6 is not finished.
+
+7. **Build molecular Symbols — populate now** — List Rows, Cards, Nav Bars, Tab Bars, Modals, Sheets. Assembled from atomic Symbols using nested overrides.
+
+8. **Build page patterns** — Navigation shells, screen templates, common layout patterns.
+
+9. **Build screens — all platforms, minimum screen set per platform** — Using instances of pattern Symbols, which use instances of molecular Symbols, which use instances of atomic Symbols. Nothing is drawn freehand on a screen.
+
+   Every platform specified in the project must have screens. If the project targets iOS and Android, both the 📱 iOS / iPadOS page and the 🤖 Android page must be populated. A page that contains only one screen (e.g. login only) is not a complete platform page.
+
+   Minimum per platform: authentication screens, home/main content (default + empty + error + loading), detail view, settings/profile, navigation shell.
+
+   Every screen in both light and dark mode before the step is considered complete.
+
+---
+
+# Replicating an Existing App in Sketch
+
+## When to Use This Workflow
+
+When the product exists in code but no Sketch file exists, or the existing file is outdated.
+
+## Step 1: Capture via MCP
+
+Use `get_selection_as_image` on live screens (screenshots pasted into Sketch frames). This gives Claude Code visual context to analyze.
+
+Use `run_code` to inspect any existing Sketch document for current Symbol inventory, Color Variables, and Text Styles before creating anything new.
+
+## Step 2: Audit
+
+From screenshots and the existing document, catalog:
+- Every unique color (sample with eyedropper)
+- Every unique font size and weight
+- Every unique spacing value (measure gaps)
+- Every unique corner radius
+- Every recurring component pattern
+
+Group what you find by role, not by appearance. `#6750A4` on every primary button is `Semantic/Interactive/Primary`, not `purple-500`.
+
+## Step 3: Formalize
+
+Build Color Variables and Tokens Studio token sets from the catalog. Name everything semantically. Populate light and dark mode values.
+
+**If an existing iOS or Android codebase exists:** read `~/.claude/skills/APPLE.md` or `~/.claude/skills/ANDROID.md` for the token names already in use in code. Use those exact names. `Semantic/Interactive/Primary` in Sketch must correspond to `Color.Semantic.Interactive.primary` in Swift, or whatever the existing naming convention is. Mismatched names create a permanent design-to-code gap.
+
+The 🎨 Tokens page must be fully populated before moving to Symbols. An empty page is not a completed step.
+
+## Step 4: Build Symbols — populate now, all states on creation
+
+Recreate every component correctly: proper naming, Smart Layout, overrides limited to what needs to be customized, Color Variables and Text Styles applied throughout. No hardcoded values.
+
+Build all state variants for every Symbol on creation. Start with atoms. The 🎛 Symbols page must contain actual Symbols before moving to screens. If it's empty, step 4 is not finished.
+
+## Step 5: Rebuild Screens — all platforms, minimum screen set
+
+"Key screens" means every platform in the project gets a representative screen set. Covering one platform and calling the step done is not acceptable. Covering only login screens is not acceptable.
+
+**Every platform specified in the project must have screens before this step is complete.** If the project targets iOS and Android, both the 📱 iOS / iPadOS page and the 🤖 Android page must have screens. If it targets web too, the 🌐 Web page must also have screens. A page that exists but contains only one screen type (e.g. login only) is not a complete platform page.
+
+**Minimum screen set per platform:**
+
+- **Authentication** — login, signup, forgot password, verification
+- **Home / main content** — default state, loading state, empty state, error state
+- **Detail** — item detail view with all content variants (full, partial, long text, short text)
+- **Settings / profile** — user settings or profile page
+- **Navigation** — the nav shell in each of its states (collapsed, expanded, active tab)
+
+Every screen above must be designed in both light and dark mode before the step is complete. Every screen must use Symbol instances, not freehand drawing.
+
+Every hardcoded value found during this step means a token or Color Variable is missing.
+
+---
+
+# Dev Handoff
+
+## Before Handing Off
+
+Verify every layer uses a Color Variable (not hardcoded hex). Verify every text layer uses a Text Style. Verify every Symbol instance is linked to the Library (not detached). Use `run_code` to audit for detached instances.
+
+## Handoff Methods
+
+**Sketch Cloud**: upload the file, share a web link. Engineers can inspect in the browser without installing Sketch. Inspect mode shows layout, spacing, colors, Text Styles, and exportable assets.
+
+**Export via MCP**: use `run_code` to batch-export assets:
+```
+Export all symbols prefixed with "icon/" from the current page as SVGs to Desktop
+```
+
+**Color Tokens export**: export Color Tokens from the web app as CSS or JSON for engineering.
+
+## Layer Naming
+
+Layer names appear in Inspect mode and in exported asset filenames. Name them as if naming code:
+
+```
+Good: button-label, card-thumbnail, nav-tab-home, icon-leading
+Bad: Rectangle 47, Group 3, Text 2
+```
+
+Same platform naming conventions as the Figma system: camelCase for iOS/Android, kebab-case for Web.
+
+## MCP-Assisted Handoff
+
+Engineers can use Claude Code with the Sketch MCP to query the document directly:
+- "List all design tokens used in my Sketch selection"
+- "Generate my current Sketch selection in React"
+- "Show the full component hierarchy of my Sketch selection as a tree"
+
+For this to produce accurate output, the document must be clean: Color Variables applied, Text Styles applied, Symbols properly named and nested.
+
+---
+
+# Accessibility
+
+Same requirements as the Figma system. WCAG AA contrast (4.5:1 normal text, 3:1 large text and interactive elements). Color cannot be the only differentiator. Touch targets 44pt minimum on iOS, 48dp on Android.
+
+Use the **Stark** plugin for contrast checking directly in Sketch.
+
+---
+
+# Anti-Patterns
+
+**Hardcoded color values in Symbols.** Any hex value in a Symbol fill that isn't a Color Variable is a missing token.
+
+**Detached Symbol instances.** Detaching breaks the Library connection. Never detach unless the component genuinely needs to diverge from the system.
+
+**Overrides exposing everything.** Every exposed override is a potential inconsistency. Only expose what designers should customize.
+
+**Symbols without all states.** A Button Symbol with only the Default state means Hover, Pressed, Disabled, and Loading will be invented differently everywhere they're needed.
+
+**Pages used as artboard dumps.** Pages have semantic purpose. Screens on the Tokens page, or Symbols scattered across the Web page, create unmaintainable files.
+
+**Building screens before Symbols.** Screens built without a Symbol library are a collection of one-offs.
+
+**Skipping dark mode.** Both appearances must be designed with equal intentionality.
+
+---
+
+# Style Implementations in Sketch
+See STYLES.md for full style definitions, token values, and iOS/Android/Web implementations.
+This section covers Sketch-specific technique for each style.
+
+DESIGN-Styles.md defines what each style is, its token values, component rules, and native iOS/Android/Web implementation. This file covers how to execute those decisions inside Sketch using Symbols, Color Variables, Layer Styles, and the manual techniques Sketch requires in place of Figma's native features.
+
+All Sketch work goes through the MCP server. See SKETCH.md for setup.
+
+---
+# 1. Neo-Minimalism in Sketch
+
+Warm neutrals, generous spacing, serif display type, hairline dividers.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Navigation Symbol**: no fill, no border, no background. Just a Text layer for the brand and link Text layers, sitting at the top of the Artboard. The nav Symbol's frame must be transparent.
+- **Hero Artboard region**: serif display Text Style at Light (300) weight, padded vertically with `spacing/xxl` (64px+) above and below. Subtext in regular sans, comfortable reading size.
+- **Content list Symbols**: each item is a row inside a Group, separated by an instance of the `Divider/Hairline` Layer Style or by Smart Layout vertical gap. NEVER wrapped in a card with a border or fill.
+- **Section dividers**: Layer Style `Divider/Hairline` (0.5-1px, warm-tinted Color Variable) is the only horizontal rule used. No 2px+ rules anywhere.
+- **CTA Symbols**: text-only or 1px outlined Text + Border. No filled rectangles for secondary actions.
+- **Backgrounds**: Color Variable `Semantic/Background/Primary` resolves to a warm off-white (#FAF9F7), never pure #FFFFFF.
+
+**Wrong if (Sketch check):**
+- Any Symbol has a Border + Fill combination forming a card box
+- Any Layer Style includes a Drop Shadow
+- Color Variable `Semantic/Background/Primary` is `#FFFFFF`
+- Spacing tokens are at default 8pt scale rather than the 25%-expanded scale
+- Any Text Style uses sans-serif for Display roles
+
+## Color Variables
+Set up Color Variables using the warm neutral palette from STYLES.md. Every semantic role must have both light and dark values.
+
+```
+Primitive/Warm/50   → #FAF9F7
+Primitive/Warm/200  → #F5F3EE
+Primitive/Warm/300  → #E8E4DC
+Primitive/Warm/900  → #2A2622
+
+Semantic/Background/Primary   → Light: Primitive/Warm/50,   Dark: Primitive/Warm/900
+Semantic/Text/Primary         → Light: Primitive/Warm/900,  Dark: Primitive/Warm/50
+Semantic/Border/Default       → Light: rgba(42,38,34,0.12), Dark: rgba(250,249,247,0.12)
+```
+
+## Text Styles
+Display text uses a system or embedded serif. In Sketch:
+- Font: New York (system serif on macOS/iOS targets) or embed Canela/Libre Caslon
+- Weight: Light (300) for Display roles
+- Line height: 1.2x for headlines, 1.7x for body
+
+## Layer Styles
+Hairline dividers as a reusable Layer Style:
+- No fill
+- Bottom border only: 0.5px, Semantic/Border/Default Color Variable
+- Saves as a Layer Style named `Divider/Hairline`
+
+## Symbols
+Cards use background color difference (secondary vs primary surface) not borders. Create a Layer Style named `Surface/Secondary` with fill at `Semantic/Background/Secondary`. Apply to card Symbol backgrounds.
+
+---
+
+# 2. Neo-Brutalism in Sketch
+
+Hard shadows, full-border containers, oversized type, high-contrast color.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Navigation Symbol**: solid brand-color Fill, Border bottom-only at 2-4px solid black. Sketch supports per-side borders via the Borders panel — set Top/Left/Right to 0px, Bottom to 2-4px, color #000.
+- **Hero Symbol**: full-Artboard-width frame, Fill = brand Color Variable, corner radius = 0px on every corner. Display Text Style at ExtraBold (800) or Black (900) weight on top.
+- **Content list items**: each list row Symbol must be a CARD — Border 2px solid #000 (Center position), Layer Style `Shadow/Hard/Medium` applied (X:4 Y:4 Blur:0 Spread:0 #000 100%), corner radius 0. NOT a divider-separated row. If the existing list Symbol uses `Divider/*` Layer Style, replace it with the card structure.
+- **Interactive Symbols (Button, Card, Arrow)**: must have two variants — `/Default` (with `Shadow/Hard/*` Layer Style) and `/Pressed` (Layer Style: none, layer position offset 4px right and 4px down). Wire the prototype interaction Mouse Down → Pressed, Mouse Up → Default.
+- **Section background Symbols**: alternate between `Semantic/Background/Primary` (white) and brand color. CTA section fills the entire frame with brand color.
+- **Section dividers**: 2px solid black, never the hairline `Divider/Hairline` style.
+
+**Wrong if (Sketch check):**
+- Any Drop Shadow on a Layer Style has Blur > 0 (must be Blur 0 for hard offset)
+- Any Symbol has corner radius > 4px
+- A list item Symbol exists without `Border 2px #000` AND a `Shadow/Hard/*` Layer Style
+- Hover state Symbol variant changes only color, not the shadow + offset behavior
+- Brand color is missing from large background fills (kept only as accent)
+
+## Color Variables
+```
+Primitive/Brand/500  → #F59E0B  (or project-specific bold color)
+Semantic/Background/Primary  → #FFFFFF
+Semantic/Text/Primary        → #000000
+Semantic/Border/Default      → #000000
+```
+
+## Hard Shadow Layer Style
+Neo-brutalist hard shadows are a Layer Style, not an ad-hoc effect. Create:
+- Layer Style named `Shadow/Hard/Small`: drop shadow, black 100%, X 2 Y 2 blur 0 spread 0
+- Layer Style named `Shadow/Hard/Medium`: X 4 Y 4 blur 0 spread 0 black 100%
+- Layer Style named `Shadow/Hard/Large`: X 6 Y 6 blur 0 spread 0 black 100%
+
+Apply the appropriate style to card and button Symbols.
+
+## Button Symbol with Press State
+
+Neo-brutalist button press behavior (shadow collapses, element shifts) is a two-variant Symbol:
+
+`Button/Primary/Default`:
+- Fill: brand color
+- Border: 2px solid black
+- Layer Style: `Shadow/Hard/Medium`
+
+`Button/Primary/Pressed`:
+- Same fill and border
+- Layer Style: none (shadow removed)
+- Layer position: offset 4px right and 4px down from default (match the shadow offset)
+
+In prototyping, connect Default to Pressed on `Mouse Down`, Pressed back to Default on `Mouse Up`.
+
+## Typography
+Text Styles for Neo-Brutalism use ExtraBold or Black weights. Create:
+- `Display/Brutalist` — 80pt+ / Black weight / tight line height
+- `Headline/Brutalist` — 28pt / ExtraBold
+Corner radius: 0px on all containers. Apply to all card and button Symbols.
+
+---
+
+# 3. Brutalism (Pure) in Sketch
+
+Monochrome, monospace, no decoration, structure through type alone.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Navigation**: plain Text layers at the top of the Artboard, no Symbol container, no Fill, no Border. Or one Text layer + a single Layer Style `Divider/Heavy` rule below.
+- **Hero**: massive serif or monospace Display Text Style — push to 80-120pt. Subtext in body Text Style. No background Fill on the Artboard region.
+- **Content lists**: either raw text rows separated by `Divider/Heavy` Layer Style applications, or a Symbol that's just a Text + bottom Border. NO card containers.
+- **Section dividers**: `Divider/Heavy` Layer Style (1-2px solid black) is the only structural element. No background-color section breaks.
+- **Buttons**: text with optional 1px black Border rectangle. No Fill, no Shadow. Save as `Button/Pure/Default`.
+- **Color palette**: maximum 3 Color Variables in the entire system — `Semantic/Paper`, `Semantic/Ink`, optional `Semantic/Accent`.
+
+**Wrong if (Sketch check):**
+- Any Layer Style includes a Drop Shadow or Inner Shadow
+- Any Symbol has corner radius > 0
+- More than 3 Color Variables exist in the document
+- Text Styles include a sans-serif body font at standard sizes (must be monospace, or extreme typographic scale)
+- Any Symbol uses a Fill that isn't `Semantic/Paper` or `Semantic/Ink`
+
+## Setup
+Color Variables: black and white only (plus one optional accent).
+Text Styles: monospace font (JetBrains Mono, Courier New).
+No Layer Styles for shadows or cards -- structure comes from spacing and dividers.
+
+## Symbols
+Buttons are text with a simple 1px border rectangle behind them. No fills, no shadows. Create as a Symbol with a text override for the label.
+
+Dividers: 1px horizontal lines, black, 100% opacity. Layer Style named `Divider/Full`.
+
+---
+
+# 4. Liquid Glass / Glass Treatment in Sketch
+
+Sketch has no native glass effect. See the manual glass technique earlier in this file.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Background Artboard layer**: must contain rich content (gradient Layer Style, image, or photo Fill) BEFORE any glass Symbol is placed on top. Glass Symbols over a flat white Artboard render as opaque white — the style is invisible without rich background.
+- **Glass Symbol stack**: Background Blur effect + semi-transparent white Fill + 1px white inside-position Border + Drop Shadow for depth. All four layers in a single Symbol Master.
+- **Two glass variants** as Symbol Masters: `Glass/Regular` (Background Blur 16px, Fill rgba(255,255,255,0.10)) and `Glass/Clear` (Background Blur 6px, Fill rgba(255,255,255,0.05)).
+- **Navigation use only**: glass Symbols belong on `NavBar/Glass`, `TabBar/Glass`, `Toolbar/Glass`. Never on content Symbols (cards, list rows, images).
+- **Content extends behind the glass layer**. The Artboard hierarchy must put scrollable content beneath the navigation glass, edge-to-edge.
+
+**Wrong if (Sketch check):**
+- Glass Symbol placed over a flat-color Artboard (no gradient, image, or photo Fill underneath)
+- Glass treatment applied to content Symbols (cards, list rows) instead of navigation
+- Background Blur effect missing from the Symbol stack
+- Border on glass Symbol uses dark color rather than semi-transparent white
+- Liquid Glass attempted on Web or Android Artboards (use Glassmorphism / style #5 instead)
+
+For navigation elements requiring glass treatment, the manual stack (Background Blur + semi-transparent fill + highlight border) is the Sketch approach. Wrap the full stack in a Symbol with overrides for the content layer.
+
+For the `.regular` vs `.clear` variants, create two Symbol Masters:
+- `Glass/Regular`: Background Blur 16px, fill white 10%
+- `Glass/Clear`: Background Blur 6px, fill white 5%
+
+Both use the same highlight border and shadow treatment.
+
+---
+
+# 5. Glassmorphism / Frosted in Sketch
+
+Same manual technique as Liquid Glass. Sketch's Background Blur effect is the primary tool.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Background Artboard layer**: vivid gradient (use a Linear Gradient Fill on a full-Artboard rectangle), hero image, or deep-color field. ALL glass Symbols sit on top of this. Without rich content underneath, glass is invisible.
+- **Glass Symbol stack** (per Symbol Master):
+  - Fill: white at 12% opacity (light mode), white at 8% (dark mode)
+  - Background Blur: 16px (standard), 24-32px (sheets), 32-48px (modals)
+  - Border: 1px white at 25% opacity, position Inside
+  - Drop Shadow: X:0 Y:8 Blur:32 #000 12% for depth
+  - Optional inner highlight: top-edge 1px white at 30% as a separate inset rectangle
+- **Three Symbol variants**: `Glass/Nav` (12-16px blur), `Glass/Sheet` (24-32px), `Glass/Modal` (32-48px). Tune blur per surface depth.
+- **Scrim sub-layer** for legibility: when glass sits over unpredictable content, add a Linear Gradient Fill rectangle inside the glass Symbol (rgba(0,0,0,0.15) → transparent for dark text).
+
+**Wrong if (Sketch check):**
+- Background Blur effect is missing or set to 0
+- Glass Symbol Fill is at 100% opacity (must be 8-20%)
+- Border uses a dark color (#000 or hex) instead of semi-transparent white
+- Glass sits over a flat solid Color Variable rather than a gradient or image
+- All glass Symbols use the same blur value regardless of depth role
+
+Layer stack identical to the Liquid Glass technique above. Frost is Background Blur intensity. Tune per context:
+- Nav bar: 12-16px blur, fill white 10%
+- Sheet: 24-32px blur, fill white 15%
+- Modal: 32-48px blur, fill white 18%
+
+---
+
+# 6. Neumorphism / Soft UI in Sketch
+
+Dual shadows (light upper-left, dark lower-right) on same-color background.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Single base color across the entire Artboard**: page background, every Symbol background, every Card Symbol fill — all reference the same Color Variable `Semantic/Background/Neumorphic`. Different fills = wrong style.
+- **Raised Symbols use the dual-shadow Layer Style** `Surface/Neumorphic/Default`: Shadow 1 (X:-4 Y:-4 Blur:8, white 70%) + Shadow 2 (X:4 Y:4 Blur:8, black 20%). No Border. Fill = base color.
+- **Pressed/active Symbols use the inset variant** `Surface/Neumorphic/Pressed`: Inner Shadow 1 (X:-2 Y:-2 Blur:6, white 70%) + Inner Shadow 2 (X:2 Y:2 Blur:6, black 20%). No Border.
+- **Two-variant Symbols**: every interactive Symbol (Button, Toggle, Card-as-Button) needs `/Default` (raised) and `/Pressed` (inset) variants wired in the prototype.
+- **No Borders anywhere**. Depth is exclusively shadow-based.
+- **Generous corner radius**: 16-24px on interactive Symbols. Apply via Tokens Studio radius tokens.
+
+**Wrong if (Sketch check):**
+- Any Symbol has a different Fill from the base `Semantic/Background/Neumorphic`
+- Any Symbol has a Border > 0 width
+- Any Layer Style uses a single directional Drop Shadow (must be the dual light + dark pair)
+- Pressed state changes color rather than swapping to inset shadows
+- Text contrast against the base Color Variable falls below WCAG AA (4.5:1) — neumorphism's biggest failure mode
+
+## Layer Style Setup
+Create a Layer Style for each shadow pair. Sketch supports multiple shadows on a single layer.
+
+`Surface/Neumorphic/Default`:
+- Shadow 1: X -4 Y -4 blur 8 spread 0, white 70%
+- Shadow 2: X 4 Y 4 blur 8 spread 0, black 20%
+- Fill: base color (e.g. #E4EBF5)
+- No border
+
+`Surface/Neumorphic/Pressed`:
+- Inner shadow 1: X -2 Y -2 blur 6, white 70%
+- Inner shadow 2: X 2 Y 2 blur 6, black 20%
+- Fill: same base color
+- No border
+
+Create Symbol variants `Default` and `Pressed` using these Layer Styles.
+
+## Color Variables
+All surface colors use the same base. Create a Color Variable:
+```
+Semantic/Background/Neumorphic → Light: #E4EBF5, Dark: #1E1E2E
+```
+
+Apply this Color Variable to all layer fills in Neumorphic Symbols so the entire system shifts when the base color changes.
+
+---
+
+# 7. Kinetic Typography in Sketch
+
+Kinetic typography is a screen-in-motion behavior, not a static design property. Sketch designs define the start and end states. Motion is annotated for engineering, not prototyped in full.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Two-Symbol pattern per kinetic element**: `Hero/Start` (text at opacity 0, position offset 20-30px below final) and `Hero/End` (text at opacity 100%, final position). Same content, different layer states.
+- **Display Text Style at extreme size** — 72pt minimum, often 120pt+. Use a Text Style named `Display/Kinetic` separate from standard Display.
+- **Variable font weight states** (when using Roboto Flex / SF Pro): create two Symbol variants showing the start weight (e.g. Thin 100) and end weight (e.g. Black 900). Annotate the weight transition.
+- **Annotation Layer Style** `Annotation/Motion`: green dashed Border, applied to any layer that has motion behavior. Layer description holds the motion spec (duration, easing, stagger).
+- **Layout reduction**: minimal cards, minimal containers — type IS the layout. Generous whitespace around kinetic elements.
+
+**Wrong if (Sketch check):**
+- Display text sizes are at standard 28-48pt range rather than 72-120pt+
+- Cards and containers dominate the layout instead of typography
+- Motion specs are missing from layer descriptions on annotated layers
+- Annotation Layer Style `Annotation/Motion` is not applied to motion-bearing elements
+- Reduce-motion fallback Symbol variant doesn't exist (every kinetic Symbol needs a static fallback)
+
+## Start State Symbol
+The text layer at initial state: opacity 0, position offset 20-30px below final position.
+
+## End State Symbol
+The text layer at final state: opacity 100%, final position.
+
+## Annotation Layer Style
+Create a Layer Style named `Annotation/Motion` -- a green dashed border. Apply to layers that have defined motion behavior and add a note in the layer description:
+
+```
+Motion: translateY(-30px) to 0, opacity 0 to 1
+Duration: 0.6s
+Easing: expo-out (cubic-bezier(0.16, 1, 0.3, 1))
+Stagger: 0.03s per character
+```
+
+Variable font weight variation (for platforms that support it): create two Symbol variants showing the collapsed weight (thin) and expanded weight (bold) states. Note the animation spec in the layer description.
+
+---
+
+# 8. Futuristic / Sci-Fi in Sketch
+
+Dark surfaces, neon accents, glow effects, grid backgrounds.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Artboard background**: deep near-black Color Variable `Semantic/Background/Primary` (#0A0A0F), not generic dark grey. Optional radial gradient from center at low opacity for subtle depth.
+- **Glow Layer Style** `Glow/Small` applied to neon-accented Symbols (active nav items, primary CTAs, status indicators): three stacked Drop Shadows, all Blur on Spread 0, all using the accent Color Variable at decreasing opacities (80% → 40% → 20%). Sketch supports multiple shadows on one layer.
+- **Grid background Symbol** `Background/Grid`: rectangle filled with dark base, plus two Line Symbol Groups (horizontal and vertical) at 40px intervals, accent color at 5-8% opacity. Used as Artboard base for every Futuristic screen.
+- **Card Symbols**: 1px Border using accent Color Variable at 15-20% opacity, Fill slightly lighter than Artboard background. Hover variant brightens Border to full accent + applies `Glow/Small`.
+- **Data text uses monospace Text Style** `Mono/Data` for numbers, readouts, status text. Tabular figures enabled in OpenType features.
+- **Minimal corner radius** — 0 to 4px maximum. Futurism is angular.
+
+**Wrong if (Sketch check):**
+- Background Color Variable resolves to generic `#1A1A1A` or `#222` rather than the near-black `#0A0A0F` blue-tinted base
+- No `Glow/*` Layer Style exists or no Symbols apply it
+- Card Symbols use standard Border colors (#000, semantic borders) rather than accent-color at low opacity
+- All text uses proportional sans-serif — no monospace `Mono/Data` Text Style for data readouts
+- Corner radius > 8px on any Symbol
+
+## Color Variables
+```
+Semantic/Background/Primary   → #0A0A0F
+Semantic/Background/Secondary → #12121A
+Semantic/Text/Primary         → #E8E8F0
+Semantic/Accent/Primary       → #00F5D4  (neon cyan)
+Semantic/Accent/Secondary     → #A855F7  (electric purple)
+```
+
+## Glow Layer Style
+Sketch supports multiple drop shadows -- use them to simulate the glow stack:
+
+`Glow/Small`:
+- Shadow 1: X 0 Y 0 blur 8 spread 0, accent color 80%
+- Shadow 2: X 0 Y 0 blur 16 spread 0, accent color 40%
+- Shadow 3: X 0 Y 0 blur 32 spread 0, accent color 20%
+
+Apply `Glow/Small` to neon-accented elements (active nav items, primary CTAs, status indicators).
+
+## Grid Background Symbol
+Create a Symbol named `Background/Grid`:
+- Rectangle filled with dark background color
+- Two semi-transparent line groups (horizontal and vertical) at 40px intervals
+- Line color: accent at 5-8% opacity
+- Use as the base artboard background for all Futuristic screens
+
+---
+
+# 9. Bento Grid in Sketch
+
+Modular card grid layout. All cards share the same corner radius.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Layout uses an explicit column grid** via View > Canvas > Layout Settings — typically 4 or 6 columns with consistent gutter. Bento cells span 1, 2, or 3 columns. The grid IS the design.
+- **At minimum three distinct cell sizes** as Symbol Masters: `BentoCell/1x1` (square), `BentoCell/2x1` (wide), `BentoCell/2x2` (featured). Equal-size grids are NOT Bento — they're card grids.
+- **Identical corner radius across every cell Symbol**: 24-32px applied via Tokens Studio radius token. All cells reference the same `radius/bento` token.
+- **Visible gap between cells**: 12-20px, the gap is the Artboard background color showing through. Set up Smart Layout vertical/horizontal gap on the parent Group.
+- **Featured cell** (largest, usually 2x2) uses brand or accent Color Variable as its Fill. Other cells use `Semantic/Background/Secondary`.
+- **One concept per cell** — Symbol contains a single content slot via nested Symbol override. No mixed content like "headline + chart + button + image" in one cell.
+
+**Wrong if (Sketch check):**
+- All cell Symbols are the same size (no `2x1`, `2x2` Symbol variants exist)
+- Corner radius differs between cell Symbols (one is 16px, another is 24px)
+- Featured cell uses the same Fill as other cells (no visual hierarchy through color)
+- Content flows in a vertical stack outside the bento grid
+- Gap between cells is missing (cells touching with no breathing room)
+
+## Grid Setup in Sketch
+Sketch doesn't have CSS Grid. Use a fixed-column grid guide system:
+- Go to **View > Canvas > Grid Settings**
+- Set column guide matching the bento layout (e.g. 2 or 3 equal columns with 16px gaps)
+
+## Cell Symbol Library
+Create Symbol Masters for each span size:
+```
+BentoCell/1x1  — square card
+BentoCell/2x1  — wide card (2 columns, 1 row height)
+BentoCell/1x2  — tall card (1 column, 2 row heights)
+BentoCell/2x2  — featured card (2 columns, 2 row heights)
+```
+
+Each cell Symbol:
+- Corner radius: 24-32px (use Tokens Studio to apply a radius token)
+- Background fill: Color Variable for appropriate surface level
+- Content area: exposed nested Symbol override
+
+---
+
+# 10. Editorial / Structural in Sketch
+
+Grid visible as design element, serif type, hairline rules.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Explicit Layout Settings column grid** (8 or 12 columns) with narrow gutters. Show Layout enabled in View menu so the grid is visible as a foreground design element during work.
+- **Multiple Text Styles coexist** on every screen: `Display/Editorial`, `Headline/Editorial`, `Body/Editorial`, `Label/Editorial` (small caps, tracked), `Caption/Editorial`. Information density is achieved through rigorous hierarchy, not one-size body text.
+- **Hairline rule Layer Styles**: `Divider/Heavy` (2px), `Divider/Standard` (1px, 80%), `Divider/Hairline` (0.5px, 40%) — the primary structural element between sections. NOT background-color section blocks.
+- **No card containers**. Content sits in column-aligned Groups separated by rules and Smart Layout spacing. Cards as containers belong to other styles.
+- **Tabular figures** enabled in Text Styles for numeric data. OpenType features panel in the Text Style inspector.
+- **Section labels**: `Label/Editorial` Text Style — uppercase, tracked 0.08-0.15em, small (11-12pt).
+
+**Wrong if (Sketch check):**
+- Layout Settings column grid is not configured or not visible
+- Only one Body Text Style is in use across screens (no typographic density)
+- Card containers wrap content lists rather than column-aligned groups with rule dividers
+- Sections are separated by background-color blocks rather than `Divider/*` Layer Styles
+- Numeric Text Styles don't have OpenType tabular figures enabled
+
+## Column Grid
+**View > Canvas > Layout Settings**: set up an explicit column grid (8 or 12 columns) with narrow gutters. Enable **Show Layout** in View menu. The grid should be visible during design as a foreground element.
+
+## Text Styles
+```
+Display/Editorial   — large serif, light weight, tight leading
+Headline/Editorial  — bold condensed or bold serif
+Body/Editorial      — regular serif, generous leading (1.7x)
+Label/Editorial     — small caps effect (via Text Style: uppercase, 0.08em tracking)
+Caption/Editorial   — 12pt regular, secondary text color
+```
+
+Tabular numerals: in Text Style inspector, enable Tabular Figures under the OpenType features panel if the font supports it.
+
+## Dividers
+Horizontal rule Layer Styles:
+- `Divider/Heavy` — 2px, full black or ink color, 100%
+- `Divider/Standard` — 1px, 80%
+- `Divider/Hairline` — 0.5px, 40%
+
+---
+
+# 11. Organic / Biomorphic in Sketch
+
+Flowing shapes, natural color palette, pill shapes, flowing curves.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Container Symbols are blob shapes**, not rectangles. Use the Pen tool or Vector Network to create irregular organic forms, save as `Shape/Blob/01` through `Shape/Blob/06` Symbol Masters. Standard rounded rectangles (even with large radius) are NOT Organic.
+- **Background blob layer on every Artboard**: instances of `Shape/Blob/*` Symbols positioned behind content, filled with gradient Color Variables (`Gradient/Sunrise`, `Gradient/Forest`). These are decorative depth, not containers.
+- **Pill shapes on interactive elements**: corner radius set to maximum (Sketch caps at 50%, achieving pill shape). Apply via Tokens Studio `radius/pill` token to Button Symbols.
+- **Color Variables from nature palette**: `Semantic/Accent/Terracotta`, `Semantic/Accent/Sage`, `Semantic/Accent/Sky`, `Semantic/Accent/Sand`. No corporate blue, no pure black, no pure white.
+- **Asymmetric layout**: text columns offset rather than centered, Symbols that don't snap to a strict grid. Smart Layout spacing uses irregular values (18, 28, 44 rather than 16, 24, 40).
+
+**Wrong if (Sketch check):**
+- Container Symbols are rectangles (even with `radius/lg` 28px applied)
+- Background of Artboards is a flat Color Variable Fill with no `Shape/Blob/*` instances behind content
+- Color palette includes corporate blues, pure black `#000000`, or pure white `#FFFFFF`
+- Layout is symmetrically centered with elements aligned to a strict grid
+- Spacing tokens are exact 8pt multiples rather than the irregular 18/28/44 organic values
+
+## Blob Shapes
+Sketch has full vector path editing. Create organic blob shapes using the Pen tool or Vector Network, then save as Symbols for background layers.
+
+Reusable blob Symbols:
+- `Shape/Blob/01` through `Shape/Blob/06`: varied irregular organic forms
+- Fill via Color Variable, not hardcoded color
+- Use as background layers behind content, not as containers
+
+## Pill Shapes
+All interactive elements use `radius/pill` (9999px). Set corner radius in the layer to maximum (Sketch rounds down automatically).
+
+## Color Variables
+```
+Semantic/Accent/Terracotta  → #C4704A
+Semantic/Accent/Sage        → #8FAB8A
+Semantic/Accent/Sky         → #6B9FBF
+Semantic/Accent/Sand        → #D4B896
+```
+
+---
+
+# 12. Texture / Tactile in Sketch
+
+Grain overlay as a shared Symbol applied to all screens.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Global noise overlay Symbol** `Effect/Noise/Subtle` placed at the TOP of the layer stack on every Artboard. Without this, the style isn't applied. The Symbol is a 200%-Artboard rectangle with noise Fill, blend mode Overlay, opacity 3-5%.
+- **Per-surface texture intensity variants** as Symbol Masters: `Effect/Noise/Subtle` (3%), `Effect/Noise/Medium` (5-7%), `Effect/Noise/Heavy` (12-15%). Pick per surface — Artboards subtle, hero elements heavier.
+- **Color Variables warm or earthy**, slightly desaturated. Flat saturated colors fight the texture. The palette should read as "printed" rather than "emitted."
+- **Sketch native Noise fill** as alternative to the Symbol approach: in any Fill, switch to Noise type, density 15-25%, opacity 0.03-0.05. Apply as a top-layer Fill on the Artboard.
+- **Typography**: humanist sans or warm serif Text Styles. Crisp but not sterile.
+
+**Wrong if (Sketch check):**
+- No `Effect/Noise/*` Symbol or Noise Fill exists at the top of the Artboard layer stack
+- Color Variables resolve to high-saturation flat colors that fight the grain
+- The overlay opacity is at default 100% (must be 3-15% depending on surface)
+- The blend mode is Normal rather than Overlay
+
+## Noise Overlay Symbol
+Create a Symbol named `Effect/Noise/Subtle`:
+- Rectangle: 200% width and height of target frame (oversized to fill on scroll)
+- Fill: noise pattern (embed a grain PNG or use the Noise effect)
+- Layer blend mode: Overlay
+- Opacity: 3-5%
+
+Place this Symbol at the top of the layer stack on every screen that needs texture. Use a nested Symbol override for the grain density variant (subtle/medium/heavy).
+
+## Sketch Noise Effect
+Sketch has a native Noise fill. In the Fill section, select Noise, set density to 15-25% and opacity to 0.03-0.05. Apply as a fill on the top layer of the artboard.
+
+---
+
+# 13. Y2K / Retro Computing in Sketch
+
+Terminal palettes, monospace type, CRT effects.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Color scheme committed to one era** via Color Variables:
+  - Terminal: `Semantic/Background/CRT-Green` (#0A0A0A) + `Semantic/Text/CRT-Green` (#00FF41)
+  - Amber CRT: bg #0F0A00 + text #FF9900
+  - Windows 3.1: grey #C0C0C0 + blue title `#000080` + bevel borders
+  - Early web: primary colors, Times New Roman, inline borders
+  Pick one. Don't mix.
+- **CRT Scan Line Symbol** `Effect/ScanLine` placed at the top of every Artboard: repeating 2px-gap horizontal lines, Fill black 6-8%, blend mode Multiply. This is the most recognizable element — it must be present.
+- **Text Styles use monospace**: `Mono/Body` (JetBrains Mono or Courier New, regular). Display text either uses bitmap-style fonts or pixel type recreated as a Symbol from rectangles.
+- **Bevel border Layer Style** `Border/Bevel` (for Windows 3.1 era): per-side Borders enabled — Top/Left 2px white 80%, Right/Bottom 2px gray 60%. Apply to dialog box and button Symbols.
+- **At least one overtly retro structural element** per screen: bevel chrome, blinking cursor (animated annotation), terminal prompt `>` indicator, or pixelated decorative element.
+
+**Wrong if (Sketch check):**
+- No `Effect/ScanLine` Symbol on the Artboard (the most recognizable element is missing)
+- Text Styles use proportional sans-serif rather than monospace
+- Color palette mixes eras (terminal green + Windows 3.1 grey on the same screen)
+- No structural retro element — design just looks like a dark theme with a green accent
+- Borders are uniform on all sides instead of using `Border/Bevel` per-side asymmetry for Windows 3.1 era
+
+## Color Variables
+```
+Semantic/Background/CRT-Green  → #0A0A0A
+Semantic/Text/CRT-Green        → #00FF41
+Semantic/Accent/CRT-Green-Dim  → #003B00
+```
+
+## CRT Scan Line Symbol
+Create a Symbol named `Effect/ScanLine`:
+- Repeating horizontal lines (2px gap between each)
+- Fill: black at 6-8%
+- Blend mode: Multiply
+- Place at top of every screen layer stack
+
+## Text Styles
+All body text: JetBrains Mono or Courier New, regular weight.
+Display text: large bitmap-style font, or manually recreated pixel type as a Symbol using rectangles (for extreme fidelity on display elements).
+
+## Windows 3.1 Bevel
+Layer Style named `Border/Bevel`:
+- Border top: 2px, white 80%
+- Border left: 2px, white 80%
+- Border right: 2px, gray 60%
+- Border bottom: 2px, gray 60%
+
+Sketch supports independent border sides. Apply to dialog boxes and button Symbols in the Y2K style.
+
+---
+
+# 14. Calm / Anti-Distraction in Sketch
+
+Maximum whitespace, minimal color, type-forward, no decoration.
+
+## Visual Signature in Sketch
+
+**Structural requirements:**
+- **Spacing tokens at 1.5-2x the default scale** via Tokens Studio. Section spacing `spacing/section` = 64px+, content padding `spacing/xl` = 32px. Whitespace IS the design.
+- **Color palette of maximum 3 Color Variables**: `Semantic/Background/Primary` (warm off-white or deep warm grey), `Semantic/Text/Primary` (near-black or near-white, never pure), `Semantic/Interactive/Accent` (single muted color, used only for the single most important interactive element). Nothing else.
+- **Body Text Style at large size** (18-20pt) with generous line-height (1.7-1.9) and moderate tracking. Reading should feel unhurried.
+- **Navigation Symbol minimal to invisible**: small logo or title Text + one or two link Texts. No background Fill, no Border. Should feel like it might not be there.
+- **Buttons text-only or 1px outline**, except for the single primary action per screen. No filled rectangles for secondary actions.
+- **No badges, no notification dots, no unread counts, no progress bars** for non-essential tasks. No tooltip Symbols that imply unprompted appearance.
+- **Motion annotation**: any animated Symbol limited to opacity fade 200-300ms ease. No spring, no transform. Annotated in layer description.
+
+**Wrong if (Sketch check):**
+- More than 3 Color Variables in active use
+- Body Text Style is at standard 14-16pt rather than 18-20pt
+- Navigation Symbol has visual weight (Background Fill, Border, prominent contrast)
+- Multiple filled-button Symbols per screen (only ONE primary CTA gets a Fill)
+- Any badge / notification dot / unread count Symbol exists
+- Spacing tokens are at default 8pt scale rather than 1.5-2x expanded
+- Motion specs in layer descriptions reference spring physics or transforms
+
+## Color Variables
+Two-color system:
+```
+Semantic/Background/Primary  → #FAFAF8 / #1A1A18
+Semantic/Text/Primary        → #2C2C2A / #E8E8E4
+Semantic/Text/Secondary      → #888884 / #6A6A66
+Semantic/Interactive/Accent  → #6B9FBF (same both modes, muted)
+```
+
+## Spacing
+Apply extra-generous spacing tokens via Tokens Studio. All section margins are `spacing/section` (64px+). Content padding is `spacing/xl` (32px).
+
+## Text Styles
+Regular weight throughout. The only bold is `Label/Large` at Medium (500). No Black or ExtraBold weights appear in this style.
+
+## Symbol Density
+Buttons are minimal: text only with a 1px border, or text with no border and color as the only differentiator. No filled button backgrounds except for the single primary action per screen.
+
+---
+
+# Cross-Style Rules in Sketch
+
+All of STYLES.md's cross-style rules apply. Sketch-specific additions:
+
+**Color Variables are mandatory regardless of style.** No hardcoded hex anywhere. The style determines which Color Variables exist and what their values are -- not whether Color Variables are used.
+
+**Every Symbol gets all states.** The style determines what those states look like, not whether they exist.
+
+**Artboard naming matches screen names in code.** `iOS/Home/Default`, not `Screen 47 copy 3`.
+
+**Library connections must be maintained.** Detached Symbols create inconsistency regardless of style.
+
+**Dark mode is required for every style.** Every Color Variable has a dark value. Every screen has been reviewed in dark mode.
+
+**Visual Signature check before handoff.** Every style above has a "Wrong if (Sketch check)" subsection. Run through it before considering a screen complete. If any condition applies, the style is not implemented correctly — fix the Sketch document before exporting tokens or going to engineering.

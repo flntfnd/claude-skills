@@ -4,6 +4,8 @@ Claude Code skills and a global CLAUDE.md. Built to stop re-explaining the same 
 
 Fork it. Strip what doesn't apply. Make it yours.
 
+> **August 2026: this repo moved off the old flat-file methodology entirely** and onto Anthropic's native Agent Skills format. It's not a refactor of the old approach -- it's a different mechanism for the same goal. The previous version (`CLAUDE.md` plus flat `skills/*.md` files, wired together with hand-written routing lines) is preserved as-is under [`_archive/`](_archive/) for reference. Nothing in `_archive/` is maintained going forward; the live system is everything below.
+
 ---
 
 ## Structure
@@ -24,6 +26,8 @@ skills/design-tool-gates/SKILL.md             Shared design-tool policy (dark ca
 skills/visual-styles/SKILL.md                 14 visual styles          (all platforms)
 skills/color-system/SKILL.md                  Curated color library     (Swiss + Bauhaus + modernist)
 skills/code-audit/SKILL.md                    Audit checklists
+
+_archive/                                     the pre-migration repo, frozen, not maintained
 ```
 
 Each skill directory also holds `reference/*.md` files for anything too deep to keep in the top-level `SKILL.md` — API detail, per-style implementations, per-platform code. Claude reads those only when the task actually needs them.
@@ -32,9 +36,11 @@ Each skill directory also holds `reference/*.md` files for anything too deep to 
 
 ## Why this changed shape
 
-This repo used to be flat files (`APPLE.md`, `STYLES.md`, etc.) referenced by hand-written routing lines in `CLAUDE.md` — "when working on Apple UI, read apple.md before writing any view code." That predates Anthropic's Agent Skills format. As of 2026 Claude Code discovers and loads skills on its own: every skill's `name` and `description` sit in context by default (a few hundred tokens each), and Claude reads the full `SKILL.md` — and whichever `reference/*.md` files it actually needs — only once a task matches. A 2,000-line file that used to cost the same whether you needed one paragraph of it or all of it now costs nothing until the relevant paragraph is read.
+This repo used to be flat files (`APPLE.md`, `STYLES.md`, etc.) referenced by hand-written routing lines in `CLAUDE.md` — "when working on Apple UI, read apple.md before writing any view code." That predates Anthropic's Agent Skills format, and it wasn't a stylistic choice — it was the only mechanism that existed at the time. A skill was a file, and the only way Claude knew to read it was being told to, explicitly, every time. As of 2026 Claude Code discovers and loads skills on its own: every skill's `name` and `description` sit in context by default (a few hundred tokens each), and Claude reads the full `SKILL.md` — and whichever `reference/*.md` files it actually needs — only once a task matches. A 2,000-line file that used to cost the same whether you needed one paragraph of it or all of it now costs nothing until the relevant paragraph is read.
 
-Two consequences that shaped this repo:
+This isn't an incremental update to the old system. It's a full migration to a different mechanism, and the two don't coexist cleanly — a flat `skills/apple.md` and a `skills/apple-platform/SKILL.md` describing the same domain would just confuse discovery. So the old version was retired outright rather than patched in place. It's preserved under [`_archive/`](_archive/) exactly as it stood the day the migration started, for anyone who wants to see what the previous approach looked like or diff against it — but it's frozen, not a fallback. Everything actually maintained lives under `skills/` and `CLAUDE.md` at the repo root.
+
+Two consequences that shaped the new structure:
 
 - **The manual routing lines are gone.** They're redundant with the discovery mechanism and can actively fight it — if a skill isn't triggering when it should, the fix is a sharper `description`, not a `CLAUDE.md` line telling Claude to read it. `CLAUDE.md` now holds only what's true on every task regardless of what Claude decides is relevant: stack, lane rules, platform target pins, and floor-level code/UI/motion/privacy rules. That split — CLAUDE.md for facts, skills for procedures — is Anthropic's own stated criterion for when something belongs in a skill instead of CLAUDE.md.
 - **Every file over ~500 lines got split.** `SKILL.md` is the table of contents; the detail moved into topic-scoped `reference/` files one level deep (`visual-styles`, for instance, went from one 1,567-line file to a 104-line `SKILL.md` plus 14 per-style reference files). This is the biggest single quality change in this pass, not just a reformat — it's the difference between Claude loading the whole Windows skill to answer a Mica question and loading only `reference/materials.md`.
