@@ -1,6 +1,6 @@
 ---
 name: design-tool-gates
-description: The shared hard gates checked at the start of and throughout every design-tool session, regardless of which tool -- Figma, Sketch, Paper, or Pencil. Covers dark canvas/background first, no empty pages/frames/artboards plus the minimum screen set per platform (Authentication, Home/main, Detail, Settings, Navigation shell), token names must match the codebase exactly, and both light and dark mode required before a design is complete. Use alongside figma-design-system, sketch-design-system, paper-design-workflow, or pencil-design-workflow whenever starting, resuming, or auditing a design file in any of those tools -- this skill owns the policy, the tool-specific skill owns the exact commands to execute it.
+description: The shared hard gates checked at the start of and throughout every design-tool session, regardless of which tool -- Figma, Sketch, or Pencil. Covers dark canvas/background first, no empty pages/frames plus the minimum screen set per platform (Authentication, Home/main, Detail, Settings, Navigation shell), token names must match the codebase exactly, and both light and dark mode required before a design is complete. Use alongside figma-design-system, sketch-design-system, or pencil-design-workflow whenever starting, resuming, or auditing a design file in any of those tools -- this skill owns the policy, the tool-specific skill owns the exact commands to execute it.
 ---
 
 # Design Tool Gates
@@ -11,9 +11,9 @@ Four rules apply to every design file in every tool, checked at session start an
 
 The canvas or artboard background must be dark before any content -- frame, component, token, Symbol, artboard -- is created. Not optional, not deferred to "polish later." A design built against a white canvas reads completely wrong once placed in an actual dark-first product context, and re-backgrounding after the fact means re-checking every color and shadow value that assumed a white surface.
 
-Do this first, on every page/canvas in the file, before anything else. Verify: the canvas surrounding all content is dark grey (`#1E1E1E` in Figma/Sketch, `#1A1A1A` in Paper), never white. If it's white, stop and fix it before continuing.
+Do this first, on every page/canvas in the file, before anything else. Verify: the canvas surrounding all content is dark grey (`#1E1E1E` in Figma/Sketch), never white. If it's white, stop and fix it before continuing.
 
-Exact commands per tool: `figma-design-system`, `sketch-design-system`, `paper-design-workflow`. Pencil has no freestanding canvas background concept -- its equivalent is the light/dark theme column, covered in gate 4 below.
+Exact commands per tool: `figma-design-system`, `sketch-design-system`. Pencil has no freestanding canvas background concept -- its equivalent is the light/dark theme column, covered in gate 4 below.
 
 ## 2. No empty pages, frames, or artboards -- plus the minimum screen set
 
@@ -39,8 +39,8 @@ If the codebase's token architecture doesn't exist yet, build the design file's 
 
 ## 4. Both light and dark mode
 
-Every screen exists in both modes before a design is considered complete, not as a follow-up pass. In Figma and Sketch this means both mode values on every token/Color Variable and every screen actually built against both. In Paper it means each artboard rendered in both. In Pencil it means a theme column (typically labeled "dark") alongside "default"/"light" on every variable, with the properties panel used to preview each mode -- Pencil doesn't yet support native theme switching beyond variable-level column values.
+Every screen exists in both modes before a design is considered complete, not as a follow-up pass. In Figma and Sketch this means both mode values on every token/Color Variable and every screen actually built against both. In Pencil it means a theme column (typically labeled "dark") alongside "default"/"light" on every variable, with the properties panel used to preview each mode -- Pencil doesn't yet support native theme switching beyond variable-level column values.
 
 ## Why these four and not more
 
-These are the gates that fail silently and expensively -- a white canvas, an empty page, a mismatched token name, or a missing dark-mode pass all look like "still in progress" rather than "broken," so nothing forces a fix until handoff, when the cost of fixing it is highest. Everything else -- component completeness, interactive-state wiring, accessibility annotations, platform-specific execution technique -- is real and required, but it lives in the tool-specific skill because it varies enough by tool that a shared version would either be too vague to enforce or too detailed to stay in sync across four files.
+These are the gates that fail silently and expensively -- a white canvas, an empty page, a mismatched token name, or a missing dark-mode pass all look like "still in progress" rather than "broken," so nothing forces a fix until handoff, when the cost of fixing it is highest. Everything else -- component completeness, interactive-state wiring, accessibility annotations, platform-specific execution technique -- is real and required, but it lives in the tool-specific skill because it varies enough by tool that a shared version would either be too vague to enforce or too detailed to stay in sync across the tool skills.

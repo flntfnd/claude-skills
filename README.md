@@ -19,7 +19,6 @@ skills/rust-conventions/SKILL.md              Rust                      (service
 skills/backend-conventions/SKILL.md           Railway backend services  (bare API servers, workers, cron -- non-Next.js)
 skills/figma-design-system/SKILL.md           Figma design systems
 skills/sketch-design-system/SKILL.md          Sketch design systems
-skills/paper-design-workflow/SKILL.md         Paper                     (paper.design)
 skills/pencil-design-workflow/SKILL.md        Pencil                    (pen.dev)
 skills/design-tool-gates/SKILL.md             Shared design-tool policy (dark canvas, empty-page, token-naming, light/dark gates)
 skills/visual-styles/SKILL.md                 14 visual styles          (all platforms)
@@ -66,15 +65,15 @@ Cross-platform animation: physics vocabulary and the spring-vs-ease decision inl
 
 ### `design-tool-gates`
 
-The four hard gates shared across every design tool — dark canvas first, no empty pages/frames/artboards plus the minimum screen set (Auth, Home w/ 4 states, Detail, Settings, Nav shell), token names must match the codebase, both light and dark mode required. Extracted out of `figma-design-system`, `sketch-design-system`, `paper-design-workflow`, and `pencil-design-workflow`, which used to each carry a near-verbatim copy of this policy — changing the policy meant editing it in four places by hand. Now it lives once; the four tool skills hold only the tool-specific mechanics for executing it.
+The four hard gates shared across every design tool — dark canvas first, no empty pages/frames plus the minimum screen set (Auth, Home w/ 4 states, Detail, Settings, Nav shell), token names must match the codebase, both light and dark mode required. Extracted out of `figma-design-system`, `sketch-design-system`, and `pencil-design-workflow`, which used to each carry a near-verbatim copy of this policy — changing the policy meant editing it in multiple places by hand. Now it lives once; the tool skills hold only the tool-specific mechanics for executing it.
 
 ### `figma-design-system` / `sketch-design-system`
 
 Rob's opinionated design-system process, not MCP tool mechanics. Pulls in `design-tool-gates` for the shared session-start checklist. `figma-design-system` explicitly defers mechanical `use_figma`/`get_design_context` call syntax to the installed `figma:figma-use` plugin skills rather than duplicating them; `sketch-design-system` stays self-contained since no equivalent plugin exists, and carries the full Sketch execution technique for all 14 visual styles.
 
-### `paper-design-workflow` / `pencil-design-workflow`
+### `pencil-design-workflow`
 
-Both tools ship fast — verify against their own changelogs before a serious session, not just this skill. Pulls in `design-tool-gates` for the shared checklist. `paper-design-workflow` covers the HTML/CSS-native canvas, MCP tool surface, Paper Snapshot, and shaders; pricing and AI-model-lineup claims point at the live pages instead of restating numbers that go stale within weeks. `pencil-design-workflow` covers `.pen` files in Git, the MCP tool surface (which changed completely since this repo's last touch — old tool names are kept in a legacy block), Slots, and the "use the pencil mcp server" terminal-prompt requirement. It's a mechanics skill; pair it with the installed `better-*` Pencil skills (`better-colors`, `better-typography`, `better-layout`, etc.) for design-quality judgment — those are a separate, complementary layer.
+pen.dev ships fast — verify against its own changelog before a serious session, not just this skill. Pulls in `design-tool-gates` for the shared checklist. Covers `.pen` files in Git, the MCP tool surface (which changed completely since this repo's last touch — old tool names are kept in a legacy block), Slots, and the "use the pencil mcp server" terminal-prompt requirement. It's a mechanics skill; pair it with the installed `better-*` Pencil skills (`better-colors`, `better-typography`, `better-layout`, etc.) for design-quality judgment — those are a separate, complementary layer.
 
 ### `visual-styles`
 
@@ -118,7 +117,7 @@ CLAUDE.md loads automatically on every session. Skills load automatically when C
 * **Backend**: Railway (API servers, workers, long-running processes)
 * **Data/Auth**: Supabase (Postgres, Auth, RLS, Realtime, Storage)
 * **Native**: SwiftUI (iOS/iPadOS/macOS), Jetpack Compose (Android), WinUI (Windows)
-* **Design**: Figma (primary), Sketch, Paper, Pencil
+* **Design**: Figma (primary), Sketch, Pencil
 * **Languages**: Swift, Kotlin, C#, TypeScript, Rust
 
 Stack is defined in CLAUDE.md. If yours differs, update the Lane Rules section. Everything else transfers.
@@ -137,7 +136,9 @@ This pass verified technical currency against live research, not just training d
 
 The color library (`color-system`) is a foundation. Once a taste-extraction pass is done — analyzing reference sites Rob actually likes and encoding the specific values, not generic ones — `taste` will override it with actual personal preference, the same way it'll override the generic token values in `visual-styles`.
 
-Paper and Pencil are both in active, fast-moving development — literally: the Pencil MCP tool surface changed completely since this repo was last touched, and Paper's pricing/roadmap moved too. Check both tools' own changelogs before a serious session, not just these skills.
+Pencil (now branded pen.dev — the rebrand is confirmed, not inferred, as of this pass) is in active, fast-moving development: its MCP tool surface changed completely since this repo was last touched. Check pen.dev's own changelog before a serious session, not just this skill.
+
+Paper (paper.design) was removed from this repo — it's no longer part of the active toolset here.
 
 ---
 

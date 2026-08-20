@@ -57,19 +57,24 @@ Operations available through `execute` include Insert, Update, Replace, Move, De
 
 `browser` is new since the tool list documented in April 2026 — it drives an actual browser, which is what makes the screenshot-overlay verification workflow (see main SKILL.md) practical without leaving the agent session.
 
-## .pen file access rule — and an unresolved discrepancy
+## .pen file access rule — a confirmed, still-unresolved contradiction
 
-The live Pencil MCP server instructs agents that `.pen` files are encrypted and must be accessed **only** through Pencil MCP tools — never `Read` or `Grep` directly.
+Two authoritative sources disagree, and this pass checked both directly rather than taking either on faith:
 
-This conflicts with docs.pencil.dev's own `.pen` format reference, which describes the format as plain, human-readable JSON intended to be both hand-edited and MCP-driven. [Unverified] which is current: either the on-disk format changed to something encrypted/obfuscated after that docs page was written, or the MCP server's instruction is a defensive default regardless of the actual file format (e.g. to force all writes through schema validation). Either way, **follow the MCP server's instruction as the hard rule** — don't `cat`, `Read`, or `grep` a `.pen` file even if it looks like plain JSON in a text editor. Flag this discrepancy to Rob; it's the kind of thing worth a five-minute check in his own session (`get_app_state` then try opening the raw file) before relying on it either way.
+- **The live Pencil MCP server** (the one actually connected to this machine) states explicitly: `.pen` files are encrypted and must be accessed **only** through Pencil MCP tools — never `Read` or `Grep` directly.
+- **docs.pencil.dev's own `.pen` format reference** describes the format, in its own words, as "JSON-based," a "structured, readable data format" that can be "opened in an IDE like any other file," "double-clicked," used "with Git like any code file," and is explicitly "version-control friendly." No mention of encryption anywhere on that page.
+
+These cannot both be describing the same on-disk reality. Possibilities: the format changed to something encrypted after that docs page was last edited and the page is stale; the docs describe an idealized/intended format that doesn't match the actual serialization; or the MCP server's instruction is a defensive default (force all writes through schema validation) unrelated to whether the bytes on disk are actually encrypted. This pass could not determine which.
+
+**Operational rule regardless of which is true:** follow the MCP server's instruction. Don't `cat`, `Read`, or `grep` a `.pen` file even if the docs say it's plain JSON — the live server governing actual tool behavior in this session says otherwise, and being wrong in the direction of "always go through MCP" costs nothing, while being wrong in the other direction risks corrupting a file. **Flag this to Rob directly** — it's a five-minute check in his own session (`get_app_state`, then try opening the raw `.pen` file in a text editor) and worth resolving rather than carrying the caveat forward indefinitely.
 
 ## The pen CLI
 
-Confirmed via docs.pencil.dev/for-developers/pen-cli — a real, documented feature as of August 2026, not a placeholder.
+Confirmed via docs.pencil.dev/for-developers/pen-cli — a real, documented feature, not a placeholder.
 
 ```bash
-# Install (npm package name conflicts between sources — verify before scripting against it)
-npm install -g @pencil.dev/cli   # [Unverified] — some docs pages show @pen.dev/cli instead
+# Install — confirmed package name, not the legacy-looking guess
+npm install -g @pen.dev/cli
 
 # Auth
 pen login       # interactive: email+password or OTP, stores token in ~/.pencil/session-cli.json
@@ -78,12 +83,12 @@ pen version
 
 # Usage
 pen interactive              # headless shell for direct MCP tool calls — scripting/debugging
-pen [options]                 # agent mode: run a prompt against an input/output .pen file
-# batch mode: process multiple designs from a JSON tasks file
-# export: PNG, JPEG, WEBP, PDF
+pen --in <file> --out <file> --prompt "..." --model <model>   # agent mode: run a prompt against an input/output .pen file
 ```
 
-For CI/CD, set `PEN_CLI_KEY` (an org-scoped key from the Developer Keys section of the pen.dev web app) instead of interactive login — it takes precedence over any stored session. The CLI runs the same editor engine as the desktop app and IDE extension, fully headless. Useful for design-system audit pipelines and pre-commit hooks; likely overkill for individual design work.
+The npm package name was previously unverified against conflicting sources; it's `@pen.dev/cli`, confirmed directly from the CLI reference page — `@pencil.dev/cli` does not exist as a package, don't script against it.
+
+For CI/CD, set `PEN_CLI_KEY` (an org-scoped key, takes precedence over any stored session) instead of interactive login. Two other env vars the CLI reference documents: `ANTHROPIC_API_KEY` (the CLI drives Claude Code under the hood, same as the editor integrations) and `PEN_API_BASE` (override the backend API URL — irrelevant unless pointed at something other than production). `DEBUG` enables verbose logging. The CLI runs the same editor engine as the desktop app and IDE extension, fully headless. Useful for design-system audit pipelines and pre-commit hooks; likely overkill for individual design work.
 
 ## Legacy / deprecated
 

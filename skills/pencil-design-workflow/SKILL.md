@@ -7,13 +7,13 @@ description: Use when working in Pencil (pen.dev, formerly pencil.dev), the Git-
 
 Pencil is a design tool that lives inside your IDE (VS Code, Cursor) or as a standalone desktop app. Design files are `.pen` files, tracked in your Git repo alongside the code they describe. The canvas isn't a separate tool — it's another file in the project.
 
-[Inference] The product's own homepage and docs now read "pen.dev" rather than "pencil.dev," while the docs are still hosted at `docs.pencil.dev`. Treat this as a rebrand in progress, not a different product — the `.pen` file format, MCP mechanics, and CLI (`pen`) are continuous with what shipped as "Pencil."
+**Confirmed rebrand, not an inference:** the product is now pen.dev throughout. The homepage (pen.dev), the docs site (still hosted at `docs.pencil.dev`, but every page header reads "pen.dev Documentation"), and the product's own copy all consistently use "pen.dev" — there's no remaining "pencil.dev" branding anywhere checked. Docs were last updated within the current week at last check, so this is current, not stale. The `.pen` file format, MCP mechanics, and CLI (`pen`) are continuous with what shipped as "Pencil" — same product, new name.
 
-Key differences from Figma and Paper:
+Key differences from Figma:
 - `.pen` files are tracked in Git, not stored in a cloud account
 - The canvas is your IDE (or a lightweight desktop app), not a separate heavyweight tool
 - MCP gives Claude Code direct read/write access to the canvas
-- Local-first, single-user — no real-time multiplayer (that's Paper's lane)
+- Local-first, single-user — no real-time multiplayer
 - AI runs through Claude Code, not Pencil itself — Pencil is free, Claude Code is the actual cost
 
 [Inference] from third-party reviews: multiple agents can work on the same `.pen` file by launching parallel Claude Code sessions scoped to different frames. Docs don't put a firm number on how many concurrent sessions are safe — treat it as "agent parallelism via your shell," not a built-in swarm feature.
@@ -84,7 +84,7 @@ Set up design variables in design.pen:
 - radius-md: 8
 ```
 
-Pencil colors are hex sRGB only — no native OKLCH or P3, unlike Paper. If `color.md` specifies P3 colors, use the sRGB equivalent and note the gap.
+Pencil colors are hex sRGB only — no native OKLCH or P3. If `color.md` specifies P3 colors, use the sRGB equivalent and note the gap.
 
 ## Variables
 
@@ -234,7 +234,7 @@ Real and documented as of August 2026 (`docs.pencil.dev/for-developers/pen-cli`)
 - **Don't skip the read step.** `get_app_state` before changes.
 - **Don't use library components without checking tokens.** A Lunaris button using Lunaris tokens in a project with a custom color system is a mismatch — sync variables first, or apply your variables to library components after dropping them in.
 - **Don't commit mid-agent-session.** Partial JSON state is hard to diff and roll back.
-- **Don't expect Paper-style multiplayer.** Pencil is local and single-user; use Git for async collaboration.
+- **Don't expect real-time multiplayer.** Pencil is local and single-user; use Git for async collaboration.
 
 ## Limitations
 
