@@ -23,9 +23,11 @@ Edge Functions handle auth validation, webhooks, and DB trigger side effects. No
 Railway verifies Supabase JWTs via public key.
 
 # Platform Targets
-iOS, iPadOS, macOS: target 26+. Current Swift and SwiftUI APIs only. No UIKit unless UIKit is the explicit context.
+iOS, iPadOS, macOS: target 26+ (current stable). iOS/iPadOS/macOS 27 shipped as betas in 2026 — see the `apple-platform` skill for beta-status tracking before bumping this pin. Current Swift and SwiftUI APIs only. No UIKit unless UIKit is the explicit context.
 
 Android: current stable release. Kotlin and Jetpack Compose. No deprecated APIs unless there's genuinely no replacement.
+
+Windows: Windows App SDK 2.x (WinUI). C# with XAML.
 
 Web: evergreen browsers. No IE, no legacy prefixes, no polyfills for anything with >95% baseline support.
 
@@ -41,9 +43,9 @@ When no visual style is specified in the brief or design files, build to the pla
 
 **Android**: Material 3 Expressive. Dynamic color from the user's wallpaper. Roboto Flex. M3 components (NavigationBar, NavigationRail, TopAppBar, FAB, etc.). Bottom navigation, adaptive layouts, edge-to-edge. A user should not be able to tell this wasn't shipped by Google.
 
-**Windows**: Fluent Design. Mica on persistent surfaces (main windows). Acrylic on transient surfaces (menus, flyouts). Segoe UI Variable. WinUI 3 controls. NavigationView with adaptive modes. A user should not be able to tell this wasn't shipped by Microsoft.
+**Windows**: Fluent Design. Mica on persistent surfaces (main windows). Acrylic on transient surfaces (menus, flyouts). Segoe UI Variable. WinUI controls. NavigationView with adaptive modes. A user should not be able to tell this wasn't shipped by Microsoft.
 
-This default applies unless a style from STYLES.md is explicitly requested. Styles in STYLES.md are intentional overrides of native conventions -- they require a deliberate design decision, not a default. If no style is specified, native is correct.
+This default applies unless a style from the `visual-styles` skill is explicitly requested. Those styles are intentional overrides of native conventions -- they require a deliberate design decision, not a default. If no style is specified, native is correct.
 
 # Writing Code
 Get it right the first time. Don't write code you'd flag in an audit.
@@ -79,7 +81,7 @@ Motion is a design decision. Spring parameters, easing curves, and durations don
 
 Every animation has a behavioral purpose. If it doesn't do anything meaningful, it doesn't belong.
 
-No third-party animation libraries when native APIs cover it. CSS animations, Web Animations API, SwiftUI animation modifiers, Jetpack Compose animate* APIs. Use the platform. Exception: on web, GSAP is the documented standard for complex timeline choreography, scroll-driven experiences, and anything requiring multi-element coordination. Lenis for smooth scrolling. Three.js/WebGL for GPU-accelerated visual experiences. These are covered in MOTION.md.
+No third-party animation libraries when native APIs cover it. CSS animations, Web Animations API, SwiftUI animation modifiers, Jetpack Compose animate* APIs. Use the platform. Exception: on web, GSAP is the documented standard for complex timeline choreography, scroll-driven experiences, and anything requiring multi-element coordination. Lenis for smooth scrolling. Three.js/WebGL for GPU-accelerated visual experiences. See the `motion-design` skill.
 
 Timing functions are named tokens, not magic cubic-bezier values inline. Physics-based motion (spring, inertia) is preferred over generic ease curves for interactive elements.
 
@@ -109,6 +111,8 @@ No unwrap() outside throwaway code. Propagate errors properly.
 
 thiserror for library errors, anyhow for application-level error handling. Don't clone() your way out of borrow checker problems. Fix the ownership issue. Iterators over manual index loops. No unsafe without a safety comment explaining exactly which invariants are being upheld.
 
+This is the floor. The `rust-conventions` skill is the operational detail (edition, toolchain, CI gates, async discipline, web stack, audio-thread crates, testing).
+
 # Testing
 Test critical paths and business logic. Skip trivial getters, setters, and pass-throughs.
 
@@ -122,20 +126,10 @@ Conventional commit format: feat:, fix:, chore:, refactor:, docs:, test:, perf:
 Subject line describes what changed and why. No mention of Claude, AI, or code generation tools. Keep subject lines under 72 characters. Use the body when context is needed.
 
 # Skills
-When working in Sketch: read ~/.claude/skills/sketch.md before touching the document. Start the Sketch MCP server first (⌘K → MCP → Start MCP Server in Sketch), then connect with: claude mcp add --transport http sketch http://localhost:31126/mcp
 
-When working on Apple platform UI: read ~/.claude/skills/apple.md before writing any view code.
-When working on Android UI: read ~/.claude/skills/android.md before writing any view code.
-When working on Windows / WinUI 3: read ~/.claude/skills/windows.md before writing any view code.
-When building or auditing a Figma design system: read ~/.claude/skills/figma.md and ~/.claude/skills/styles.md before starting.
-When working in Paper (paper.design): read ~/.claude/skills/paper.md before touching the canvas. Start Paper Desktop first -- MCP server starts automatically.
-When working in Pencil (pencil.dev): read ~/.claude/skills/pencil.md before touching the canvas. Open the .pen file in VS Code/Cursor first to activate MCP.
-When working on web (HTML/CSS/JS/TS/Next.js/Astro): read ~/.claude/skills/web.md before writing any web code.
-When working on motion or animation (any platform): read ~/.claude/skills/motion.md before writing any animation code.
-When the project has a specific visual style (Neo-Brutalism, Glassmorphism, Bento Grid, etc.): read ~/.claude/skills/styles.md for token values and platform-specific implementation for that style.
-When specifying color values in any design work: read ~/.claude/skills/color.md for the curated palette before inventing hex values.
-When asked to audit anything: read ~/.claude/skills/audit.md before starting.
-When writing Rust (any context — services, CLIs, libraries, audio, FFI): read ~/.claude/skills/rust.md before writing any Rust code. The brief Rust conventions in this file are the floor; rust.md is the operational detail.
+Everything platform-, tool-, or workflow-specific lives as an Agent Skill in `~/.claude/skills/` and loads automatically when it's relevant -- no manual routing needed. See `README.md` in this repo for the full inventory. If a skill isn't triggering when it should, that's a signal its `description` needs sharper trigger terms, not a reason to add a routing line back here.
+
+One exception: skills only discover each other by what's already in context. When a task clearly spans skills up front (a Figma design system for an app that will ship on three platforms, a motion-heavy page that also needs the color library), name the ones you expect Claude to pull in in your prompt rather than assuming it'll chain to all of them unprompted.
 
 # General
 - Comments are for complex code only. Don't narrate the obvious.

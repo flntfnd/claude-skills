@@ -1,6 +1,6 @@
 # claude-skills
 
-Claude Code skill files and a global CLAUDE.md. Built to stop re-explaining the same context in every session.
+Claude Code skills and a global CLAUDE.md. Built to stop re-explaining the same context in every session.
 
 Fork it. Strip what doesn't apply. Make it yours.
 
@@ -9,159 +9,96 @@ Fork it. Strip what doesn't apply. Make it yours.
 ## Structure
 
 ```
-~/.claude/CLAUDE.md              global config, loads on every session
-~/.claude/skills/apple.md        iOS / iPadOS / macOS  (SwiftUI)
-~/.claude/skills/android.md      Android               (Jetpack Compose)
-~/.claude/skills/windows.md      Windows               (WinUI 3)
-~/.claude/skills/web.md          Web                   (Next.js / Astro)
-~/.claude/skills/motion.md       animation             (all platforms)
-~/.claude/skills/rust.md         Rust                  (services, CLIs, audio, FFI)
-~/.claude/skills/figma.md        Figma design systems
-~/.claude/skills/sketch.md       Sketch design systems
-~/.claude/skills/paper.md        Paper                 (paper.design)
-~/.claude/skills/pencil.md       Pencil                (pencil.dev)
-~/.claude/skills/styles.md       14 visual styles      (all platforms)
-~/.claude/skills/color.md        curated color library (Swiss + Bauhaus + modernist)
-~/.claude/skills/audit.md        audit checklists
+CLAUDE.md                                    global config, loads on every session
+skills/apple-platform/SKILL.md               iOS / iPadOS / macOS      (SwiftUI, Liquid Glass)
+skills/android-platform/SKILL.md              Android                   (Jetpack Compose, M3 Expressive)
+skills/windows-platform/SKILL.md              Windows                   (WinUI, Mica/Acrylic)
+skills/web-platform/SKILL.md                  Web                       (Next.js, Astro, Supabase)
+skills/motion-design/SKILL.md                 Animation                 (all platforms, GSAP, Three.js)
+skills/rust-conventions/SKILL.md              Rust                      (services, CLIs, audio, FFI)
+skills/figma-design-system/SKILL.md           Figma design systems
+skills/sketch-design-system/SKILL.md          Sketch design systems
+skills/paper-design-workflow/SKILL.md         Paper                     (paper.design)
+skills/pencil-design-workflow/SKILL.md        Pencil                    (pen.dev)
+skills/visual-styles/SKILL.md                 14 visual styles          (all platforms)
+skills/color-system/SKILL.md                  Curated color library     (Swiss + Bauhaus + modernist)
+skills/code-audit/SKILL.md                    Audit checklists
 ```
+
+Each skill directory also holds `reference/*.md` files for anything too deep to keep in the top-level `SKILL.md` — API detail, per-style implementations, per-platform code. Claude reads those only when the task actually needs them.
 
 ---
 
-## Files
+## Why this changed shape
 
-### `CLAUDE.md`
+This repo used to be flat files (`APPLE.md`, `STYLES.md`, etc.) referenced by hand-written routing lines in `CLAUDE.md` — "when working on Apple UI, read apple.md before writing any view code." That predates Anthropic's Agent Skills format. As of 2026 Claude Code discovers and loads skills on its own: every skill's `name` and `description` sit in context by default (a few hundred tokens each), and Claude reads the full `SKILL.md` — and whichever `reference/*.md` files it actually needs — only once a task matches. A 2,000-line file that used to cost the same whether you needed one paragraph of it or all of it now costs nothing until the relevant paragraph is read.
 
-Global config. Lives at `~/.claude/CLAUDE.md` and loads automatically on every session. Sets stack lane rules, platform targets, code standards, UI architecture, animation philosophy, design fidelity requirements, privacy defaults, audio thread rules, Rust conventions, and skill routing. Everything else in this repo assumes this file is loaded.
+Two consequences that shaped this repo:
 
-### `apple.md`
+- **The manual routing lines are gone.** They're redundant with the discovery mechanism and can actively fight it — if a skill isn't triggering when it should, the fix is a sharper `description`, not a `CLAUDE.md` line telling Claude to read it. `CLAUDE.md` now holds only what's true on every task regardless of what Claude decides is relevant: stack, lane rules, platform target pins, and floor-level code/UI/motion/privacy rules. That split — CLAUDE.md for facts, skills for procedures — is Anthropic's own stated criterion for when something belongs in a skill instead of CLAUDE.md.
+- **Every file over ~500 lines got split.** `SKILL.md` is the table of contents; the detail moved into topic-scoped `reference/` files one level deep (`visual-styles`, for instance, went from one 1,567-line file to a 104-line `SKILL.md` plus 14 per-style reference files). This is the biggest single quality change in this pass, not just a reformat — it's the difference between Claude loading the whole Windows skill to answer a Mica question and loading only `reference/materials.md`.
 
-iOS 26 / iPadOS 26 / macOS Tahoe. SwiftUI only.
+---
 
-Platform Visual Signature section defines what "looks like Apple built it" and what doesn't. Full Liquid Glass implementation: material variants, GlassEffectContainer, morphing, button styles, GPU performance constraints, all three system accessibility adaptations. Custom rendering section: SwiftUI Canvas, TimelineView-driven animation, custom Animatable conformances, AttributedString rich typography, Metal shader modifiers. Spring animation token system, navigation patterns, haptics. Every known gotcha documented.
+## Skills
 
-### `android.md`
+### `apple-platform`
 
-Jetpack Compose, Material 3 Expressive, current stable.
+iOS 26 / iPadOS 26 / macOS Tahoe 26 baseline, SwiftUI only. Full Liquid Glass API surface (`.glassEffect()`, `GlassEffectContainer`, morphing, button styles, GPU/performance rules), semantic color and typography tokens, HIG motion, navigation patterns, custom rendering (SwiftUI Canvas, `Animatable`, `AttributedString`, Metal shader modifiers), and accessibility. `reference/whats-new-ios27.md` tracks iOS 27's beta status in its own file so forward-looking, less-certain content never contaminates the stable reference.
 
-Platform Visual Signature section defines what "looks like Google built it." Color role system, Roboto Flex variable font with weight animation, spring-based MotionScheme, adaptive navigation (bottom bar / rail / drawer by window size), M3E components. Custom rendering section: Compose Canvas with organic blob and waveform, AGSL shaders (chromatic aberration, noise/grain), RenderEffect chaining, AnnotatedString. Edge-to-edge, haptics, recomposition performance.
+### `android-platform`
 
-### `windows.md`
+Jetpack Compose, Material 3 Expressive, current stable Android. M3 color roles and dynamic color, Roboto Flex typography, shape morphing, spring-based `MotionScheme`, edge-to-edge (no opt-out as of Android 16), adaptive navigation via `currentWindowAdaptiveInfo()`, custom rendering (Compose Canvas, AGSL shaders, `RenderEffect`).
 
-WinUI 3 via Windows App SDK 1.8+. C# with XAML.
+### `windows-platform`
 
-Platform Visual Signature section defines what "looks like Microsoft built it" -- Mica background, NavigationView on the left, Segoe UI Variable. Mica / Acrylic material system with correct surface assignments (most developers get this backwards), Composition API with ExpressionAnimation for scroll-tied parallax, InteractionTracker for gesture physics. Custom rendering: Win2D canvas drawing, TurbulenceEffect for procedural grain, pointer input differentiation (mouse / touch / pen with pressure and tilt). Full testing checklist (DPI scales, window sizes, High Contrast, Narrator, keyboard-only).
+Windows App SDK 2.x, WinUI (Microsoft dropped the "3" from the name in 2026 — kept as a recognized synonym since it's still near-universal in practice), C#/XAML. Mica/Acrylic material system with the surface-assignment rule most people get backwards, Composition API for scroll-tied parallax and gesture physics, Win2D drawing, and the full pre-ship accessibility testing checklist (High Contrast themes, Narrator, keyboard-only).
 
-### `web.md`
+### `web-platform`
 
-HTML5, CSS, TypeScript, Next.js App Router, Astro, Supabase integration.
+HTML5, modern CSS, TypeScript, Next.js App Router (Cache Components, `"use cache"`, `proxy.ts`), Astro (Content Layer API, Server Islands), and Supabase SSR integration with the Vercel/Railway lane rules enforced in actual code patterns. Advanced visual techniques (blend modes, clip-path, SVG, Canvas 2D), security headers, Core Web Vitals, WCAG 2.2. The largest skill in the library — split into twelve reference files by subtopic.
 
-Modern CSS (container queries, cascade layers, nesting, `:has()`, subgrid, scroll-driven animations). Next.js 15 Server/Client Components, Server Actions with typed discriminated union returns, Supabase stack integration with lane rules enforced in code (no `service_role` on Vercel, middleware session refresh, RLS as the security layer). Error handling patterns (error.tsx, not-found.tsx, useActionState, ErrorBoundary). Advanced visual techniques: CSS blend modes, clip-path, SVG animation and inline filters, Canvas 2D, custom cursor. Security headers, CSP, Zod validation, Baseline 2026 targets.
+### `motion-design`
 
-### `motion.md`
+Cross-platform animation: physics vocabulary and the spring-vs-ease decision inline in `SKILL.md`, then per-platform reference files (SwiftUI, Compose, WinUI, CSS/View Transitions, GSAP, Three.js core, Three.js shaders/particles). GSAP's plugin set (ScrollTrigger, SplitText, Flip, MorphSVG) is fully free now — no license key needed.
 
-Cross-platform animation deep spec. Read before writing animation code on any platform.
+### `figma-design-system` / `sketch-design-system`
 
-Physics foundations, spring vs ease curve decision logic (springs for user-triggered, ease for system-triggered), duration scale (83ms–700ms), when not to animate. Per-platform: iOS/SwiftUI spring API, KeyframeAnimator, PhaseAnimator, `@Animatable`, `matchedGeometryEffect`; Android/Compose AnimationSpec, M3E MotionScheme, variable font animation; Windows SpringNaturalMotionAnimation, ConnectedAnimation; Web: CSS native (compositor thread), scroll-driven animations, GSAP (ScrollTrigger, SplitText, Flip, cleanup requirements), Lenis, Three.js + WebGL (scene construction, PBR materials, lighting, post-processing, style-specific shaders, particle systems). Cross-platform motion token table.
+Rob's opinionated design-system process, not MCP tool mechanics. Dark-canvas-first, no-empty-pages, and token-names-must-match-codebase are hard gates checked every session. `figma-design-system` explicitly defers mechanical `use_figma`/`get_design_context` call syntax to the installed `figma:figma-use` plugin skills rather than duplicating them; `sketch-design-system` stays self-contained since no equivalent plugin exists, and carries the full Sketch execution technique for all 14 visual styles.
 
-### `rust.md`
+### `paper-design-workflow` / `pencil-design-workflow`
 
-Rust 2024 edition (stable since Rust 1.85). Services, CLIs, libraries, audio, FFI.
+Both tools ship fast — verify against their own changelogs before a serious session, not just this skill. `paper-design-workflow` covers the HTML/CSS-native canvas, MCP tool surface, Paper Snapshot, shaders, and current pricing. `pencil-design-workflow` covers `.pen` files in Git, the MCP tool surface (which changed completely since this repo's last touch — old tool names are kept in a legacy block), Slots, and the "use the pencil mcp server" terminal-prompt requirement. It's a mechanics skill; pair it with the installed `better-*` Pencil skills (`better-colors`, `better-typography`, `better-layout`, etc.) for design-quality judgment — those are a separate, complementary layer.
 
-Extends the floor rules in CLAUDE.md (no `unwrap()` outside throwaway code, `thiserror` for libraries, `anyhow` for applications, no `clone()` to dodge the borrow checker, `// SAFETY:` comments on every `unsafe`) with operational detail. Edition and toolchain pinning, CI gates (`cargo fmt --check`, `cargo clippy -D warnings`, `cargo audit`, `cargo deny check`, `cargo nextest`). Error handling patterns with proper source chains. Async discipline: Tokio runtime setup, async closures, cancellation safety with Drop guards, send bounds, when to `spawn_blocking`, structured concurrency, bounded channels. Web stack: axum 0.8 with `{id}` path syntax, sqlx with compile-time checks, Tower middleware, `IntoResponse` errors, graceful shutdown. Observability via `tracing` with `#[instrument]` and structured JSON. Concurrency primitives (channels, locks, atomics, `LazyLock`). Audio thread rules (`rtrb`, `ringbuf-basedrop`, `assert_no_alloc`, `basedrop::Shared` over `Arc`). Testing with `#[sqlx::test]`, project structure (single crate vs workspace with `resolver = "3"`), performance discipline (string types, iterator chains, allocation awareness), FFI, WASM, documentation with doctests. Crate selection for ~30 categories with current best-of-class. 15 anti-patterns and a 12-item audit checklist that extends audit.md.
+### `visual-styles`
 
-### `figma.md`
+14 distinct visual languages (Neo-Minimalism, Neo-Brutalism, Brutalism Pure, Liquid Glass, Glassmorphism, Neumorphism, Kinetic Typography, Futuristic/Sci-Fi, Bento Grid, Editorial/Structural, Organic/Biomorphic, Texture/Tactile, Y2K/Retro Computing, Calm/Anti-Distraction), each with its own reference file: Visual Signature, "Wrong if" checklist, token modifications, component rules, and iOS/Android/Web implementation code. `SKILL.md` carries the cross-cutting Style-to-Technique Mapping and Cross-Style Rules since those apply no matter which single style loads.
 
-Figma design system workflow. Uses the Figma MCP server.
+### `color-system`
 
-Three-tier token architecture, variable collections and modes, platform token name mapping (Figma to SwiftUI / Compose / CSS), component architecture with Slots, interactive prototype wiring (required -- not optional). Dark canvas, no-empty-pages, platform completeness, and minimum screen set are all enforced as hard prerequisites. Applying a style to existing designs workflow: restructure components first, then apply Figma effects (exact panel values for hard shadow, glass, neumorphism, glow), then update tokens. Building from scratch and replicating an existing app workflows.
+Roughly 50 named primitives from Swiss International Style poster design and the Bauhaus primary triad, plus mid-century and screen-optimized derivatives. Semantic light/dark tokens, historically-verified pairing rules, WCAG contrast table. This is a curated *palette* — for converting or manipulating whatever color you land on in OKLCH/HSL/gamut space, that's the separately-installed `better-colors` skill. TASTE.md, once built, overrides this with Rob's actual personal preference (see below).
 
-### `sketch.md`
+### `code-audit`
 
-Sketch design system workflow. Uses the Sketch MCP server.
+Seven-category audit checklist: code, UI/design-system coherence, audio thread, security, design-file handoff, and a general Rust pointer. Rust-specific audit depth lives in `rust-conventions` instead of being duplicated here.
 
-Symbols vs Figma Components terminology map, Color Variables, Tokens Studio for non-color tokens, Smart Layout, Libraries, manual glass technique (Sketch has no native glass). Same structural rules as figma.md: dark canvas first, populate pages before moving on, token names must mirror the codebase, all targeted platforms must have screens.
+### `rust-conventions`
 
-Sketch-specific implementations for all 14 visual styles at the bottom. Each style has a **Visual Signature in Sketch** section with structural requirements in Sketch terminology (Symbol Masters, Layer Styles, Color Variables, Borders panel, Tokens Studio tokens) and a **Wrong if (Sketch check)** checklist of auditable failure conditions. The pattern mirrors figma.md's structural requirements but uses Sketch's actual UI vocabulary.
-
-### `paper.md`
-
-Paper design workflow. paper.design. Paper Desktop with MCP launched March 2026.
-
-Paper is different: the canvas is real HTML/CSS, not vectors. What you build IS what the browser renders. Two-way MCP -- agents read and write the canvas directly. Multiplayer web-native, share via URL. OKLCH and Display P3 color per element. Backdrop filters, CSS filters, variable fonts, OpenType features all first-class.
-
-Sections: MCP setup for all supported IDEs (Claude Code, Cursor, Codex, Copilot, Antigravity, OpenCode) with exact config snippets. Full tool reference including `get_font_family_info`, `get_guide`, `find_placement`. Paper Snapshot browser extension for pasting sections of any live website as editable layers (replaces the screenshot-and-trace workflow). Workflows: design-to-code with React/Tailwind (`Alt+R`, `Alt+T` shortcuts), Figma import with transfer gotchas, Notion content sync, responsive via breakpoint frames. Shader system (Halftone CMYK, Fluted Glass, Liquid Metal, Pulsing Border, custom GLSL, video export). In-canvas AI image generation (Flux 2, Nano Banana Pro via Gemini 3, Seedream 4.5). Variables as CSS custom properties. Pixel-perfect verification via 50% opacity overlay. Roadmap statuses aligned to Paper's actual labels (done / in progress / coming soon / planned).
-
-### `pencil.md`
-
-Pencil design workflow. pencil.dev. Early access as of April 2026, free.
-
-Pencil lives inside VS Code / Cursor or as a desktop app. Design files are `.pen` JSON that version-control alongside your code. MCP gives Claude Code direct read/write access. AI runs through Claude Code, not Pencil itself -- the Claude Code dependency is made explicit because users assume Pencil has its own LLM.
-
-Sections: installation including the Claude Code auth step most people miss, MCP verification per host. Variables with theme columns for light/dark, sync to/from `globals.css`, extract from Figma via screenshot. Real component system: `Cmd/Ctrl + Option/Alt + K` creates a component origin (magenta bounding box); instances get violet boxes; "Go to component" navigates back. **Slots** with diagonal-line indicators and suggested slot components (the AI-relevant feature that tells the agent what belongs where). **Design Libraries** as `.lib.pen` files (irreversible once marked), import via Libraries icon. Design-to-code for React, Next.js, Vue, Svelte, plain HTML/CSS -- not native targets. Figma-to-Pencil paste workflow with transfer tolerances. Git workflow with design files as code. In-canvas `Cmd/Ctrl + K` prompting. Pixel-perfect verification via 50% opacity overlay. Early access caveats (auto-save issues, `config.toml` modification, Wayland UI issues on Linux).
-
-### `styles.md`
-
-14 visual design styles. Each has a Visual Signature (structural requirements + "Wrong if" checklist), Token Modifications, Component Rules, and platform implementation for iOS/SwiftUI, Android/Compose, and Web/CSS.
-
-Neo-Minimalism, Neo-Brutalism, Brutalism (Pure), Liquid Glass, Glassmorphism/Frosted, Neumorphism/Soft UI (Claymorphism evolution), Kinetic Typography, Futuristic/Sci-Fi, Bento Grid, Editorial/Structural, Organic/Biomorphic, Texture/Tactile, Y2K/Retro Computing, Calm/Anti-Distraction.
-
-Style-to-Technique Mapping at the bottom: every style mapped to the specific GPU/rendering technique that produces its signature effect on each platform. Futuristic needs `UnrealBloomPass`. Y2K needs the CRT shader. Glassmorphism needs a Three.js background to blur. Calm needs nothing -- deliberately.
-
-### `color.md`
-
-Curated color library. Read before specifying color primitives.
-
-~50 named primitives from two sources: Swiss International Style poster work (Müller-Brockmann, Hofmann, Ballmer, Bill -- as systematized in Fabian Burghardt's Swiss Style Color Picker) and the Bauhaus primary triad (Itten's `#C8302A / #E8C018 / #1E3878`). Extended with mid-century modernist palette and contemporary screen-optimized variants. Full neutral ramps (warm and cool), semantic role mappings for light and dark mode, WCAG contrast table for all primary pairs (yellow on white fails -- documented). Color pairing logic from actual historical poster practice. TASTE.md overrides this once built.
-
-### `audit.md`
-
-Checklists for: code (dead code, memory leaks, security, error handling, performance, deprecated APIs), UI (hardcoded values, design system coherence, responsive logic, animation), audio thread (allocations, blocking calls, ObjC messaging, cross-thread comms), security (key exposure, RLS, JWT, PII in logs), design files (canvas background, empty pages, token population, token naming vs code, component completeness, interactive wiring, platform coverage, screen completeness), Rust (unwrap, error types, clones, unsafe), Rust toolchain (clippy -D warnings, cargo audit, cargo deny, cargo test).
-
-rust.md adds a deeper, Rust-specific audit section that extends this one (edition, toolchain pinning, async rules, error type discipline, tracing, axum/sqlx hygiene, audio thread allocations, workspace consistency, profile settings).
+Extends CLAUDE.md's floor rules (no bare `unwrap()`, `thiserror`/`anyhow` split, no `clone()`-to-dodge-the-borrow-checker) with the operational layer: edition/toolchain pinning, CI gates, async/Tokio discipline, the axum/sqlx/tower web stack, `tracing` observability, realtime audio-thread crates, testing, project structure, a ~30-category crate selection guide, and a 12-item audit checklist.
 
 ---
 
 ## Setup
 
-```
+Each skill is a self-contained directory. Personal skills go under `~/.claude/skills/`; project-only skills go under `.claude/skills/` in a given repo.
+
+```bash
 cp CLAUDE.md ~/.claude/CLAUDE.md
 mkdir -p ~/.claude/skills
-cp skills/audit.md   ~/.claude/skills/audit.md
-cp skills/apple.md   ~/.claude/skills/apple.md
-cp skills/android.md ~/.claude/skills/android.md
-cp skills/windows.md ~/.claude/skills/windows.md
-cp skills/figma.md   ~/.claude/skills/figma.md
-cp skills/sketch.md  ~/.claude/skills/sketch.md
-cp skills/styles.md  ~/.claude/skills/styles.md
-cp skills/motion.md  ~/.claude/skills/motion.md
-cp skills/web.md     ~/.claude/skills/web.md
-cp skills/rust.md    ~/.claude/skills/rust.md
-cp skills/color.md   ~/.claude/skills/color.md
-cp skills/paper.md   ~/.claude/skills/paper.md
-cp skills/pencil.md  ~/.claude/skills/pencil.md
+cp -r skills/* ~/.claude/skills/
 ```
 
-CLAUDE.md loads automatically. Skill files are read on demand -- they don't burn context on irrelevant content.
-
----
-
-## Routing
-
-```
-Apple platform UI            → apple.md
-Android UI                   → android.md
-Windows / WinUI 3            → windows.md
-Web (HTML/CSS/TS/Next/Astro) → web.md
-Motion or animation          → motion.md       (any platform)
-Rust (any context)           → rust.md
-Figma design system          → figma.md + styles.md
-Sketch design system         → sketch.md
-Paper (paper.design)         → paper.md
-Pencil (pencil.dev)          → pencil.md
-Project has a visual style   → styles.md
-Color values needed          → color.md
-Audit anything               → audit.md
-```
+CLAUDE.md loads automatically on every session. Skills load automatically when Claude judges them relevant to the current task — no manual routing required. Run `/skills` in Claude Code at any point to see what's currently discoverable.
 
 ---
 
@@ -170,7 +107,7 @@ Audit anything               → audit.md
 * **Frontend**: Vercel (Next.js, SSR, edge middleware)
 * **Backend**: Railway (API servers, workers, long-running processes)
 * **Data/Auth**: Supabase (Postgres, Auth, RLS, Realtime, Storage)
-* **Native**: SwiftUI (iOS/iPadOS/macOS), Jetpack Compose (Android), WinUI 3 (Windows)
+* **Native**: SwiftUI (iOS/iPadOS/macOS), Jetpack Compose (Android), WinUI (Windows)
 * **Design**: Figma (primary), Sketch, Paper, Pencil
 * **Languages**: Swift, Kotlin, C#, TypeScript, Rust
 
@@ -180,27 +117,27 @@ Stack is defined in CLAUDE.md. If yours differs, update the Lane Rules section. 
 
 ## Notes
 
-CLAUDE.md is opinionated. "Write it correctly the first time" sounds obvious. Stating it explicitly changes the output.
-
-Platform targets are pinned to current: iOS 26+, Android stable, Windows App SDK 1.8+, Rust 1.85+ (2024 edition). Update Platform Targets if you need older support.
-
-Native-first by default. If no visual style is specified, iOS looks like Apple built it, Android looks like Google built it, Windows looks like Microsoft built it. styles.md styles are deliberate overrides of native conventions -- not defaults.
+Native-first by default. If no visual style is specified, iOS looks like Apple built it, Android looks like Google built it, Windows looks like Microsoft built it. `visual-styles` skill styles are deliberate overrides of native conventions — not defaults.
 
 Design fidelity is non-negotiable. Claude implements designs, it doesn't invent them. Without this rule the default is to fill unspecified gaps with whatever looks plausible. That creates drift.
 
-The design tool files all have hard enforcement rules: dark canvas first, no empty pages, tokens before components, components before screens, all targeted platforms populated. Every rule exists because the failure mode happened.
+The design-tool skills all have hard enforcement gates: dark canvas first, no empty pages, tokens before components, components before screens, all targeted platforms populated. Every rule exists because the failure mode happened.
 
-Paper and Pencil are both in active development. Paper (paper.design) is an HTML/CSS canvas with bidirectional MCP across six different agent hosts, multiplayer web-native, OKLCH/P3 color, and a growing shader library. Paper Snapshot is a Chrome extension that pastes live site sections as editable layers. Pencil (pencil.dev) puts `.pen` files in your Git repo alongside code, has a real component system with slots, and depends on Claude Code for its AI features. Check their changelogs before any serious session -- both ship frequently.
+This pass verified technical currency against live research, not just training data, and every skill flags genuinely uncertain claims inline as `[Unverified]` or `[Inference]` rather than stating them as fact — per the one rule that governs all work on this repo (see below). A few corrections worth knowing about even if you don't read every file: Next.js jumped 15→16 with breaking async-API changes; Windows App SDK moved off the "1.x" line to 2.x; sqlx jumped 0.8→0.9 with real breaking changes; the Sketch skill's reference to a `get_selection_as_image` MCP tool was wrong and is now `get_screenshot`; and the color-system skill's WCAG table had one mislabeled contrast pair (swiss-red on swiss-black reads as AA-pass at a glance but is actually 4.0:1, below the 4.5:1 floor for body text). Full flag lists live inline in each skill.
 
-rust.md is the newest file. It extends the brief Rust conventions in CLAUDE.md with operational detail: current edition, toolchain, CI gates, the default web stack (axum + sqlx + tracing), async cancellation safety, realtime audio discipline, and a 12-item audit checklist. Read it before writing Rust in any context.
+The color library (`color-system`) is a foundation. Once a taste-extraction pass is done — analyzing reference sites Rob actually likes and encoding the specific values, not generic ones — `taste` will override it with actual personal preference, the same way it'll override the generic token values in `visual-styles`.
 
-The color library (color.md) is a foundation. Once the taste extraction sessions are done, TASTE.md will override it with actual personal preference.
+Paper and Pencil are both in active, fast-moving development — literally: the Pencil MCP tool surface changed completely since this repo was last touched, and Paper's pricing/roadmap moved too. Check both tools' own changelogs before a serious session, not just these skills.
 
 ---
 
 ## Contributing
 
-Personal config, not a framework. PRs that change the opinions in CLAUDE.md aren't what this is for. If you find a factual error in a platform spec -- wrong API, stale version, missing gotcha -- open an issue.
+Personal config, not a framework. PRs that change the opinions in CLAUDE.md aren't what this is for. If you find a factual error in a platform spec — wrong API, stale version, missing gotcha — open an issue.
+
+## The one rule above all others
+
+Never present unverified platform API information as fact. If something is uncertain, say so. If an API might have changed, say so. The whole point of this system is precision — wrong information is worse than no information.
 
 ---
 
