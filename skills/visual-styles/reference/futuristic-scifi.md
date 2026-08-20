@@ -4,6 +4,12 @@ Dark surfaces. Neon accent colors. Glowing UI elements. Grid systems as foregrou
 
 **When to use**: Developer tools, security/monitoring dashboards, fintech (high-end), AI products, gaming-adjacent apps, anything where projecting technical sophistication is on-brand.
 
+## Contents
+- [Visual Signature](#visual-signature)
+- [Token Modifications](#token-modifications)
+- [Component Rules](#component-rules)
+- [Platform Implementation](#platform-implementation)
+
 ## Visual Signature
 
 Identifiable at a glance by: near-black background (#0A0A0F), neon accent colors with glow (`box-shadow: 0 0 16px var(--accent)`), visible grid lines or geometric border patterns at low opacity, monospace type for data readouts, angular/minimal UI chrome. Should feel like a command center.

@@ -88,7 +88,7 @@ Name variants with consistent property names across the system: `State` with val
 
 Slots are the correct pattern for flexible composition, replacing the old approach of building twenty card variants for every content combination with one card that has slots. A slot is a named container inside a component that accepts component instances -- it behaves like an Auto Layout frame, but its contents can be swapped without detaching the parent component.
 
-Slots shipped to open beta in March 2026 and the developer API expanded in June 2026 (stretch behavior on insertion, empty-state display, min/max child limits, preferred-value restrictions). Confirm the feature is enabled for the file's plan before relying on it as the default pattern -- fall back to instance-swap component properties if it isn't available.
+Slots shipped to open beta in March 2026 and reached general availability in June 2026, when the Plugin API expanded alongside it (`SlotNode`, `createSlot()`, and `SlotSettings` fields for stretch behavior on insertion, empty-state display, min/max child limits, preferred-value restrictions). Available in Figma Design on all plans -- no plan gating to check before using it as the default composition pattern. Instance-swap component properties are still the right call for simple single-element swaps that don't need a full content region.
 
 Use slots for:
 - Content regions inside cards (header, body, footer, media)

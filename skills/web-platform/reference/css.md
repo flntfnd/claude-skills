@@ -150,7 +150,7 @@ Container queries are the correct tool for component-level responsiveness. Media
 
 Container query units: `cqw`, `cqh`, `cqi` (inline), `cqb` (block) — use inside `@container` blocks for sizing relative to the container.
 
-Style queries (querying a container's custom property values, not just size) reached Baseline newly available via Firefox in 2026 — check current browser support before relying on `@container style(...)` in a broad-support project.
+Style queries on custom properties (querying a container's custom property values, not just size) reached Baseline newly available in May 2026 once Firefox 151 shipped support — Chrome and Safari already had it. Style queries on regular CSS properties (`style(font-weight: bold)`) aren't supported in any browser yet. "Newly available" means under 30 months old — confirm current support before relying on it in a broad-support project.
 
 ## :has() selector
 

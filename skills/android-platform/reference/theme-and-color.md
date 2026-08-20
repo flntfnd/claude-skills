@@ -110,7 +110,7 @@ MaterialTheme.colorScheme.inverseOnSurface
 MaterialTheme.colorScheme.inversePrimary
 ```
 
-M3E also exposes `expressiveLightColorScheme()` / `expressiveDarkColorScheme()` as generator functions with the same role surface, tuned for M3E's more saturated defaults — use them as the baseline instead of `lightColorScheme()`/`darkColorScheme()` when the app is explicitly opting into the Expressive look. Both are stable as of `material3` 1.4.0.
+M3E also exposes `expressiveLightColorScheme()` / `expressiveDarkColorScheme()` as generator functions with the same role surface, tuned for M3E's more saturated defaults — use them as the baseline instead of `lightColorScheme()`/`darkColorScheme()` when the app is explicitly opting into the Expressive look. Both still require `@OptIn(ExperimentalMaterial3ExpressiveApi::class)` in stable `material3` 1.4.0 — see the M3E opt-in note in the main SKILL.md.
 
 ## Custom Brand Colors
 

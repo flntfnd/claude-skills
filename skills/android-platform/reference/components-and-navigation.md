@@ -62,9 +62,9 @@ Use `Modifier.animateWidth()` in `ButtonGroupScope` on a group's children so the
 ### Split Button
 
 ```kotlin
-// SplitButton (current name; the older SplitButtonLayout is deprecated in newer
-// material3 alpha releases in its favor — `[Unverified]`: confirm which name is
-// current in whatever material3 version the project is pinned to)
+// SplitButton is the current name — SplitButtonLayout was deprecated in its favor
+// as early as the 1.4.0 alpha train, before 1.4.0 shipped stable. Both still need
+// @OptIn(ExperimentalMaterial3ExpressiveApi::class) on stable material3 1.4.0.
 SplitButton(
     leadingButton = { Button(onClick = { }) { Text("Save") } },
     trailingButton = { /* dropdown */ }

@@ -28,7 +28,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 
 Verified via web search in August 2026: axum's latest released version is 0.8.9 (0.9 is being developed on the `main` branch but has **not** shipped to crates.io — `{id}` path syntax and everything below is still correct for new code). tower-http moved to 0.7.0. sqlx moved to 0.9.0, which has real breaking changes over 0.8 — see the sqlx section below before bumping an existing project. `thiserror` is at 2.0.x, `tower` at 0.5.x, `tracing`/`tracing-subscriber` unchanged in shape (0.1.x / 0.3.x).
 
-On the `chrono` feature: chrono's maintainer soft-deprecated chrono/chrono-tz in 2026 in favor of `jiff`, which now has direct sqlx integration via the `jiff-sqlx` crate rather than a first-party sqlx feature. New projects should default to `jiff` + `jiff-sqlx` over `chrono` unless there's a specific reason to stay (existing large chrono surface, a dependency that hard-requires chrono types). `[Unverified — recent, re-check chrono's crates.io description and the sqlx docs for current guidance before treating this as settled]`. See [crate-selection.md](crate-selection.md) for more.
+On the `chrono` feature: chrono's maintainer soft-deprecated chrono/chrono-tz in January 2026 (`chronotope/chrono#1768`) in favor of `jiff`, which now has direct sqlx integration via the `jiff-sqlx` crate (0.2.0, Postgres and SQLite only — no MySQL) rather than a first-party sqlx feature. New projects should default to `jiff` + `jiff-sqlx` over `chrono` unless there's a specific reason to stay (existing large chrono surface, a dependency that hard-requires chrono types). Confirmed against the primary GitHub issue, no longer `[Unverified]`. See [crate-selection.md](crate-selection.md) for more.
 
 ## axum
 
@@ -147,9 +147,9 @@ Verified against the sqlx changelog/discussion in August 2026. If bumping an exi
 - **`sqlx.toml` config file.** New project-level config for multi-database/multi-tenant setups, global type overrides, and SQLite compile-time extension loading. Optional, not required to keep existing behavior.
 - **Postgres option escaping.** `PgConnectOptions::options()` now auto-escapes; remove any manual escaping in existing code, it'll double-escape.
 - **MySQL text columns.** Previously inferred as `Vec<u8>`, now infer as `String`. Also, the default collation directive changed from `SET NAMES utf8mb4 COLLATE utf8_general_ci` to plain `SET NAMES utf8mb4` (server picks the default collation).
-- **`TransactionManager`** is no longer re-exported from the crate root (it was already marked unstable).
+- **`TransactionManager`** is no longer re-exported from the crate root. It was `#[doc(hidden)]` and already marked unstable, but the changelog flags that this will break SeaORM if SeaORM doesn't fix it proactively — worth checking if the project depends on SeaORM.
 
-`[Unverified — this is a synthesized changelog summary, not a line-by-line diff]`. Read `CHANGELOG.md` in the sqlx repo before a production bump.
+Confirmed line-for-line against `CHANGELOG.md` in the sqlx repo (no longer a synthesized summary) — all five points above match the actual 0.9.0 changelog entries. Still worth a direct read on a production bump for anything project-specific the changelog calls out beyond this list.
 
 ## Tower middleware
 

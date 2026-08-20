@@ -80,7 +80,7 @@ For generating C headers: `cbindgen`. For consuming C: `bindgen`. Both run in `b
 
 For WASM in the browser: `wasm-bindgen` (current line 0.2.1xx) is the foundation. The browser is a different runtime — no Tokio, no threads without `SharedArrayBuffer`, no filesystem. `web-sys` for DOM access.
 
-`wasm-pack` is the traditional build wrapper around `wasm-bindgen`, still receiving releases. `[Unverified]` there was recent public discussion in the wasm-bindgen project about wasm-pack's long-term maintenance ownership shifting — the wasm-bindgen docs reportedly still recommend it as of this pass, but confirm current tooling guidance (wasm-pack vs. `trunk` vs. building the target directly) before starting a new WASM project rather than assuming this file is current.
+`wasm-pack` is the traditional build wrapper around `wasm-bindgen`, still receiving releases (0.15.0, May 2026). The ownership question is now resolved: the old `rustwasm` GitHub org was sunset in 2025 after the Rust and WebAssembly Working Group went inactive, and both `wasm-bindgen` and `wasm-pack` were transferred to a new `wasm-bindgen` org (`github.com/wasm-bindgen/wasm-pack`) with fresh maintainers rather than being archived. `trunk` is a live alternative for app-shaped projects (it wraps wasm-bindgen directly, skipping wasm-pack). Both are reasonable starting points; check which the wasm-bindgen guide is recommending for the specific project shape before starting a new WASM project.
 
 ## Documentation
 

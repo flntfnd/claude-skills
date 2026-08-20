@@ -89,8 +89,11 @@ export default async function proxy(request: NextRequest) {
         }
     );
 
-    // Refresh session -- must be called here so cookies rotate on every request
-    await supabase.auth.getUser();
+    // Refresh session -- must be called here so cookies rotate on every request.
+    // Supabase's current SSR guide defaults this call to getClaims(), not getUser():
+    // proxy runs on every request, and getClaims() verifies locally against the
+    // project's JWKS instead of round-tripping to the Auth server each time.
+    await supabase.auth.getClaims();
     return response;
 }
 
@@ -128,7 +131,7 @@ Supabase now issues asymmetric (RSA/ECC) JWT signing keys by default for new pro
 - **`getUser()`**: always calls the Auth server. Slightly slower, but reflects instant ban/delete/sign-out.
 - **`getClaims()`**: verifies locally (fast, cached JWKS) when the project uses asymmetric keys; falls back to a server round-trip on projects still using a symmetric (shared-secret) key. Preferred when raw performance matters more than sub-second propagation of account-status changes.
 
-`getUser()` remains correct and is the simpler default for typical protected-route checks. Reach for `getClaims()` on high-traffic paths (middleware/proxy running on every request, hot API routes) where the extra round-trip is measurable. Never use `getSession()` alone to gate access — it reads the (possibly stale, unverified) client-side session without validating the JWT.
+`getUser()` remains correct and is the simpler default for typical protected-route checks. Reach for `getClaims()` on high-traffic paths (middleware/proxy running on every request, hot API routes) where the extra round-trip is measurable — this is exactly why Supabase's own current SSR guide uses `getClaims()`, not `getUser()`, in the proxy example above. Never use `getSession()` alone to gate access — it reads the (possibly stale, unverified) client-side session without validating the JWT.
 
 ```typescript
 // getClaims example -- same shape of use as getUser
@@ -173,5 +176,7 @@ export async function createItem(formData: FormData) {
 **Never use the plain JS client in Server Components.** It doesn't handle cookie refresh correctly. Always use `createServerClient` from `@supabase/ssr`, awaited, per request.
 
 **Never expose `SUPABASE_SERVICE_ROLE_KEY` to the browser.** Environment variables without the `NEXT_PUBLIC_` prefix are server-only. `NEXT_PUBLIC_SUPABASE_ANON_KEY` is safe to expose. `SUPABASE_SERVICE_ROLE_KEY` must never carry the `NEXT_PUBLIC_` prefix.
+
+Supabase is migrating off the legacy `anon`/`service_role` key names to `sb_publishable_...`/`sb_secret_...`, with legacy keys deprecated by end of 2026 (both generations work simultaneously today). Supabase's own quickstart now names the client env var `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` instead of `NEXT_PUBLIC_SUPABASE_ANON_KEY`. This reference keeps the legacy `ANON_KEY`/`SERVICE_ROLE_KEY` naming above since it's still valid and most existing projects use it — check the project's Supabase dashboard for which key generation it actually issued before assuming. See `backend-conventions/reference/supabase-admin-client.md` for the same tradeoff on the service-key side.
 
 **RLS is the security layer.** `createClient()` on Vercel uses the anon key with the user's session cookie. Supabase enforces RLS via `auth.uid()`. The user can only read/write their own rows. Don't add application-level filtering on top of RLS — it produces duplicate logic that drifts from the real policy.

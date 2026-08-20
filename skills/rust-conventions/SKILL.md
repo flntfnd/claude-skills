@@ -52,7 +52,7 @@ opt-level = 3             # keeps heavy dev-deps (image, crypto, DB drivers) tol
 
 ```toml
 [toolchain]
-channel = "1.97.0"        # bump periodically; verify against releases.rs
+channel = "1.98.0"        # bump periodically; verify against releases.rs
 components = ["rustfmt", "clippy", "rust-src"]
 ```
 
@@ -163,7 +163,7 @@ Per CLAUDE.md: no `.clone()` to dodge the borrow checker. The fix is restructuri
 
 ## Audit checklist
 
-Extends the general rules in `audit.md`. Working through a Rust diff or codebase:
+Extends the general rules in the `code-audit` skill. Working through a Rust diff or codebase:
 
 1. **Edition** — every crate on `edition = "2024"`?
 2. **Toolchain pinned** — `rust-toolchain.toml` present with an explicit channel?
@@ -188,4 +188,4 @@ Extends the general rules in `audit.md`. Working through a Rust diff or codebase
 - releases.rs (Rust release/version tracker): https://releases.rs/
 - This Week in Rust: https://this-week-in-rust.org/
 
-Version numbers throughout this skill were verified via web search in August 2026 (Rust 1.97 stable, 1.98 imminent; axum 0.8.9 with 0.9 in development on main but unreleased; sqlx 0.9.0; tokio 1.52.x). Crate ecosystems move fast — re-verify anything load-bearing (a version pin going into a new `Cargo.toml`) against crates.io or docs.rs rather than trusting this file indefinitely. Items marked `[Unverified]` or `[Inference]` in the reference files could not be confirmed from a primary/changelog source and should get a direct check before being treated as fact.
+Version numbers throughout this skill were verified via web search in August 2026 (Rust 1.98 stable, 1.99 in beta; axum 0.8.9 with 0.9 still in development on main, unreleased; sqlx 0.9.0; tokio 1.53.x). Crate ecosystems move fast — re-verify anything load-bearing (a version pin going into a new `Cargo.toml`) against crates.io or docs.rs rather than trusting this file indefinitely. Items marked `[Unverified]` or `[Inference]` in the reference files could not be confirmed from a primary/changelog source and should get a direct check before being treated as fact.

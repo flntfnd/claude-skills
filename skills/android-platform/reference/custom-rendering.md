@@ -75,7 +75,7 @@ fun AnimatedBlob() {
 }
 ```
 
-Compose 1.12 (paired with BOM 2026.08.00) added `MeshGradientPainter` for multi-point mesh gradients and Wide Color Gamut (P3)/HDR support across the rendering pipeline — reach for these instead of hand-rolled multi-stop `Brush.radialGradient` chains when the design calls for an organic, multi-color gradient field.
+Compose 1.12 (paired with BOM 2026.08.00) added `MeshGradientPainter` for multi-point, hardware-accelerated mesh gradients and Wide Color Gamut support (non-sRGB color spaces like Display P3 and AdobeRGB, preserved on API 29+) — reach for these instead of hand-rolled multi-stop `Brush.radialGradient` chains when the design calls for an organic, multi-color gradient field.
 
 ## AGSL (Android Graphics Shading Language)
 
@@ -190,4 +190,4 @@ val paragraphAnnotated = buildAnnotatedString {
 }
 ```
 
-The August 2026 Compose release extended rich formatting (`SpanStyle`/`ParagraphStyle`) to *editable* text fields as well, not just display `Text` — worth reaching for on any rich-text-input surface instead of a hand-rolled markdown renderer.
+`BasicTextField` already supports rich formatting (`SpanStyle`/`ParagraphStyle`) on *editable* text, not just display `Text` — query it via `getSpanStyles`/`getParagraphStyles` on the field's `TextFieldState`. This predates the current release; Compose 1.12 just refined those query APIs to take a `TextRange` instead of separate start/end indices. Reach for it on any rich-text-input surface instead of a hand-rolled markdown renderer.

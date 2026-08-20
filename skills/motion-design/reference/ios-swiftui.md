@@ -1,6 +1,6 @@
 # iOS / SwiftUI Motion
 
-Baseline: iOS 17+ for the named spring presets and keyframe APIs, iOS 26+ for `@Animatable`. As of August 2026, iOS 26 is the current shipping stable release; iOS 27 is in public beta with no confirmed animation-API changes beyond what iOS 26 already shipped -- treat everything below as current, not iOS-27-only.
+Baseline: iOS 17+ for the named spring presets and keyframe APIs, iOS 26+ for `@Animatable`. As of August 2026, iOS 26 is the current shipping stable release; iOS 27 is in public beta (GA expected September 2026). Unlike a prior pass through this file assumed, iOS 27 does add new transition/motion surface -- WWDC26 introduced a `.reorderable()` modifier for drag-and-drop reordering in `List`/`LazyVGrid`/custom containers, plus new sheet and full-screen-cover transition customization (layer shaders, timeline-driven animation, alignment-guide anchoring during the transition). **[Unverified]** exact API syntax for these iOS-27 additions isn't reproduced here -- iOS 27 hasn't shipped GA and the syntax wasn't confirmed against release documentation; check `developer.apple.com/documentation/SwiftUI` before relying on it. Everything else below is iOS 17-26 stable and current regardless of which OS ships next.
 
 ## Contents
 

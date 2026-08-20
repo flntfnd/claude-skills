@@ -13,7 +13,7 @@
 - [Atomics](#atomics)
 - [Interior mutability](#interior-mutability)
 
-Tokio is the default runtime. Don't mix runtimes — pick one per binary. async-std and smol exist but the ecosystem (axum, tower, sqlx's `runtime-tokio` feature, most middleware) is built around Tokio. Current Tokio is in the 1.5x line (1.52.x); LTS branches exist (1.47.x, 1.51.x) for teams that want a slower-moving pin — `[Unverified]` check `docs.rs/tokio` for the current LTS window before committing to one.
+Tokio is the default runtime. Don't mix runtimes — pick one per binary. async-std and smol exist but the ecosystem (axum, tower, sqlx's `runtime-tokio` feature, most middleware) is built around Tokio. Current Tokio is in the 1.53.x line (1.53.1 confirmed on crates.io); two LTS branches are live for teams that want a slower-moving pin — 1.47.x (supported to Sept 2026, MSRV 1.70) and 1.51.x (supported to March 2027, MSRV 1.71). Confirmed via tokio's own release notes; re-check which LTS windows are still open before pinning, since they roll forward.
 
 ## Runtime setup
 
@@ -74,10 +74,10 @@ For async cleanup, structured concurrency via `tokio::select!` with a cancellati
 
 ## Send bounds on async traits
 
-`async fn` in traits works on stable, but generic functions over those traits hit the "Send bound" problem: the compiler can't express "the future this returns is `Send`" without help. Two options:
+`async fn` in traits works on stable, but generic functions over those traits hit the "Send bound" problem: the compiler can't express "the future this returns is `Send`" without help. One real option today, one that's still not there:
 
-- `trait_variant::make(Send)` — generates a non-Send and a Send variant of the trait. Well-established, works today.
-- Return Type Notation (RTN, `T::method(..): Send`) — stabilized for where-clause and item-bound positions on trait methods with lifetime generics. `[Unverified]` whether RTN alone now fully replaces `trait_variant` for the common "make my async trait Send" case, or whether it only covers a subset — check current async-book guidance before dropping `trait_variant` from a project that relies on it.
+- `trait_variant::make(Send)` — generates a non-Send and a Send variant of the trait. Well-established, the production answer today.
+- Return Type Notation (RTN, `T::method(..): Send`) — **still unstable**, corrected from an earlier draft of this file that called it stabilized. The stabilization PR (`rust-lang/rust#138424`) was closed without merging on December 27, 2025, and the tracking issue (`rust-lang/rust#109417`) remains open with implementation marked incomplete as of this pass. RTN is nightly-only behind `#![feature(return_type_notation)]`. Don't write code or docs that assume it's available on stable — keep using `trait_variant` for Send bounds on async traits.
 
 ```rust
 #[trait_variant::make(Send)]

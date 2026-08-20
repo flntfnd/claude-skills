@@ -34,7 +34,7 @@ WinUI falls back to a solid theme color automatically in these cases. Don't writ
 - **Remote Desktop or a VM**: the compositor can't blend with desktop content over RDP.
 - **Insufficient graphics hardware**: Mica and Desktop Acrylic need DirectX 11 and adequate GPU memory.
 - **Transparency effects disabled**: Settings > Personalization > Colors > Transparency effects off disables all `SystemBackdrop` materials and `AcrylicBrush`.
-- **Battery Saver active**: disables Acrylic (`DesktopAcrylicBackdrop` and `AcrylicBrush`). Mica is unaffected.
+- **Battery Saver active**: disables both materials -- Acrylic (`DesktopAcrylicBackdrop`, `AcrylicBrush`) and Mica (`MicaBackdrop`) all fall back to solid color. Mica is not exempt from this one.
 - **High Contrast mode**: all materials are suppressed; high-contrast theme colors apply instead.
 
 ## Mica

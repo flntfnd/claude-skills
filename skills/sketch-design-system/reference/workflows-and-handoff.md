@@ -11,9 +11,9 @@
 ## File Structure
 
 ```
-Page: 🎨 Tokens          — Color Variables documented, Tokens Studio setup
+Page: 🎨 Tokens          — Color Variables documented, non-color token spec (no Tokens Studio equivalent in Sketch)
 Page: 🔤 Typography       — Text Styles, type scale specimens
-Page: 🎛 Symbols          — all Symbol Masters, organized by category
+Page: 🎛 Symbols          — all Symbol Sources, organized by category
 Page: 📐 Patterns         — composed layouts, navigation shells
 Page: 📱 iOS / iPadOS     — platform screens
 Page: 🤖 Android          — platform screens
@@ -32,7 +32,7 @@ Each step is complete when the content exists in Sketch, not when the page has b
 
 **2. Set up Color Variables -- populate now.** Primitives first, then semantic aliases. Both light and dark values for every semantic variable. The 🎨 Tokens page isn't done until these variables exist and are documented. No Symbols until this step is complete.
 
-**3. Install Tokens Studio -- populate now.** Set up token sets for spacing, radius, typography sizes, and motion; apply the values. An empty Tokens Studio panel is not a completed step.
+**3. Document non-color tokens -- populate now.** Sketch has no Tokens Studio equivalent (Tokens Studio is Figma/Penpot-only). Write the spacing, radius, typography-size, and motion values directly onto the 🎨 Tokens page as a named spec, and apply those values to layers by hand throughout. An empty or missing token spec is not a completed step -- see [token-architecture.md](token-architecture.md) for the structure.
 
 **4. Create Text Styles -- populate now.** One per semantic role, referencing semantic Color Variables for text color.
 
@@ -56,7 +56,7 @@ When the product exists in code but no Sketch file exists, or the existing file 
 
 **Step 2: Audit.** From screenshots and the existing document, catalog every unique color (eyedropper), font size/weight, spacing value (measure gaps), corner radius, and recurring component pattern. Group by role, not appearance -- `#6750A4` on every primary button is `Semantic/Interactive/Primary`, not `purple-500`.
 
-**Step 3: Formalize.** Build Color Variables and Tokens Studio token sets from the catalog. Name everything semantically. Populate light and dark mode values. If an existing iOS or Android codebase exists, read the `apple-platform` or Android platform skill for the token names already in use and match them exactly -- `Semantic/Interactive/Primary` in Sketch must correspond to `Color.Semantic.Interactive.primary` in Swift, or whatever the codebase's naming convention is. The 🎨 Tokens page must be fully populated before moving to Symbols.
+**Step 3: Formalize.** Build Color Variables from the catalog, and write up the non-color values (spacing, radius, type scale) as a documented spec on the Tokens page -- Sketch has no Tokens Studio equivalent to bind them as live tokens. Name everything semantically. Populate light and dark mode values. If an existing iOS or Android codebase exists, read the `apple-platform` or Android platform skill for the token names already in use and match them exactly -- `Semantic/Interactive/Primary` in Sketch must correspond to `Color.Semantic.Interactive.primary` in Swift, or whatever the codebase's naming convention is. The 🎨 Tokens page must be fully populated before moving to Symbols.
 
 **Step 4: Build Symbols -- populate now, all states on creation.** Recreate every component correctly: proper naming, Smart Layout, overrides limited to what needs customizing, Color Variables and Text Styles applied throughout, no hardcoded values. Start with atoms; the 🎛 Symbols page must contain actual Symbols before moving to screens.
 
@@ -98,7 +98,7 @@ Use the **Stark** plugin for contrast checking directly in Sketch.
 
 **Symbols without all states.** A Button Symbol with only the Default state means Hover, Pressed, Disabled, and Loading will be invented differently everywhere they're needed.
 
-**Pages used as artboard dumps.** Pages have semantic purpose -- screens on the Tokens page, or Symbols scattered across the Web page, create unmaintainable files.
+**Pages used as frame dumps.** Pages have semantic purpose -- screens on the Tokens page, or Symbols scattered across the Web page, create unmaintainable files.
 
 **Building screens before Symbols.** Screens built without a Symbol library are a collection of one-offs.
 

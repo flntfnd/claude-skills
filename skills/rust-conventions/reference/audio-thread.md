@@ -2,7 +2,14 @@
 
 CLAUDE.md establishes the rule: no allocations, no locks, no Objective-C messaging on the realtime callback. This is the Rust-specific implementation of that rule.
 
-`[Unverified]` note up front: the small, specialized crates below (`rtrb`, `ringbuf-basedrop`, `basedrop`, `assert_no_alloc`) are the standard answer in the Rust audio community and their APIs shown here match current docs.rs, but this search pass could not confirm recent publish dates or active-maintenance status for all of them from crates.io directly (JS-rendered pages blocked a direct check). Before depending on any of them in a new project, check crates.io's "last updated" date and open-issues count yourself — realtime-audio crates are a thin part of the ecosystem and a stale one is a real risk.
+Maintenance status, checked directly against the crates.io API in August 2026: this is a mixed bag, not a uniformly healthy set.
+
+- `rtrb` — actively maintained, released as recently as August 2026 (0.4.0). Safe default.
+- `basedrop` — last published October 2025 (0.1.3). Reasonably current, single-digit release cadence but not abandoned.
+- `ringbuf-basedrop` — last published **May 2022** (0.1.1), over four years stale, single maintainer, 716 lines. This is not actively maintained. Treat the recommendation below as "the fork exists and works" rather than "this is a healthy dependency" — check its issue tracker before pulling it into new production code, and consider whether wrapping plain `ringbuf` with your own `basedrop::Shared` glue is safer than depending on an unmaintained fork.
+- `assert_no_alloc` — last published **August 2021** (1.1.2), over five years stale. Still the standard answer for this specific job (no real competitor has emerged), but it's unmaintained in the literal sense — no bug fixes are coming. Vendor it or fork it if a compiler/std change ever breaks it.
+
+None of these are large enough crates that staleness alone is disqualifying — the audio-Rust ecosystem is thin and these are all small, focused, largely-finished pieces of code — but don't assume "still the standard answer" means "actively maintained." Re-check crates.io yourself before a new dependency decision.
 
 ## Lock-free SPSC ring buffers
 

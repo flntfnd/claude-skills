@@ -76,7 +76,7 @@ MotionScheme.expressive().defaultEffectsSpec<Float>()
 
 Set the scheme once at the theme root (`MaterialExpressiveTheme(motionScheme = MotionScheme.expressive()) { ... }`) rather than threading a scheme through every call site -- that's the point of the system.
 
-FAB, FAB Menu, and expressive-menu components have graduated from experimental to stable, so building on M3E motion for those components is no longer a bleeding-edge bet.
+FAB, FAB Menu, and expressive-menu APIs have graduated out of `@ExperimentalMaterial3ExpressiveApi` -- but that graduation landed in the `material3` 1.5.0-alpha line, not yet in a stable release (stable is 1.4.0 as of August 2026). If your project pins `material3` stable, expect the experimental opt-in annotation on these components until 1.5.0 ships stable; on the 1.5.0 alpha train, the annotation is already gone.
 
 ## Compose Spring Cheat Sheet
 

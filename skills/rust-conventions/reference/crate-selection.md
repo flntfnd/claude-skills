@@ -14,13 +14,13 @@ When in doubt, check `lib.rs` (alternative crates index) or `blessed.rs` (curate
 
 | Category | Pick | Verified state (Aug 2026) |
 | --- | --- | --- |
-| Async runtime | `tokio` (`features = ["full"]` for prototypes, narrowed for production) | Current line 1.52.x. LTS branches exist (1.47.x, 1.51.x); `[Unverified]` which is "current LTS" at any given moment, check docs.rs. |
+| Async runtime | `tokio` (`features = ["full"]` for prototypes, narrowed for production) | Current line 1.53.x (1.53.1 confirmed on crates.io). Two LTS branches confirmed live: 1.47.x (supported to Sept 2026, MSRV 1.70) and 1.51.x (supported to March 2027, MSRV 1.71) — check the tokio release notes for which is current when pinning. |
 | HTTP server | `axum` 0.8+ | Latest released is 0.8.9. 0.9 is in development on `main`, not yet on crates.io — don't write code against unreleased 0.9 APIs. |
 | HTTP client | `reqwest` (`default-features = false, features = ["rustls-tls", "json"]` to avoid native-tls) | Unchanged in shape. |
 | SQL | `sqlx` (compile-time checked, async, no ORM) | Now at 0.9.0, with real breaking changes from 0.8 — see [web-stack.md](web-stack.md). `sea-orm` if you want an ORM; `diesel` for sync. |
 | Migrations | `sqlx::migrate!` macro, or `sqlx-cli` externally | Unchanged. |
 | CLI | `clap` 4+ with derive macros | 4.6.x confirmed current. |
-| Errors | `thiserror` 2 for libraries, `anyhow` 1 for applications | thiserror at 2.0.x (2.0.19 seen). |
+| Errors | `thiserror` 2 for libraries, `anyhow` 1 for applications | thiserror at 2.0.x (2.0.20 seen). |
 | Logging/tracing | `tracing` + `tracing-subscriber` (`env-filter`, `json` features) | tracing 0.1.x, tracing-subscriber 0.3.x (0.3.23 seen). |
 | Tower middleware | `tower` 0.5, `tower-http` for the standard set | tower-http moved to 0.7.0 (was 0.6 previously). |
 
@@ -33,7 +33,7 @@ This is the one real ecosystem shift since the last pass. Starting in 2026, chro
 - **Existing chrono codebases**: chrono isn't broken or yanked, just no longer where new investment goes. Don't rip it out reflexively — migrate opportunistically or when timezone bugs push you to.
 - One real trade-off: chrono's zone-aware datetime type is `Copy`; jiff's `Zoned` is not (it embeds a `TimeZone`). That affects some hot-path code.
 
-`[Unverified — recent]`: this is a live, recent shift (the GitHub soft-deprecation issue and the jiff-sqlx crate are both current-year). Confirm against chrono's crates.io page and the sqlx ecosystem wiki before committing a new project to jiff, in case the picture has moved further since.
+Confirmed directly against the primary source: chrono maintainer djc opened `chronotope/chrono#1768` ("Soft-deprecating chrono and chrono-tz") on January 22, 2026, stating "the API design for these crates is quite dated, revising it would be a lot of effort, and with jiff there is now an alternative I feel comfortable recommending." `jiff-sqlx` is real and at 0.2.0, with `postgres` and `sqlite` features only — no MySQL feature exists, confirming the gap noted above. This is no longer `[Unverified]`; treat the jiff-over-chrono recommendation as settled for new projects.
 
 <details>
 <summary>Legacy / deprecated</summary>
@@ -56,6 +56,6 @@ Older guidance recommended `chrono` for `DateTime` work and `time` for some embe
 - **Property testing**: `proptest`.
 - **Snapshot testing**: `insta`.
 - **Faster test runner**: `cargo-nextest`.
-- **Audio realtime**: `rtrb` or `ringbuf-basedrop`, `assert_no_alloc`, `basedrop` — see [audio-thread.md](audio-thread.md); maintenance status of this niche `[Unverified]`, check crates.io yourself before depending on them.
+- **Audio realtime**: `rtrb` (actively maintained) or `ringbuf-basedrop` (stale since 2022), `assert_no_alloc` (stale since 2021, still the standard answer), `basedrop` (maintained, last release Oct 2025) — see [audio-thread.md](audio-thread.md) for per-crate maintenance status, confirmed against crates.io directly.
 - **Embedded HTTP**: `embassy-net` + `embedded-svc` for no_std contexts.
 - **Supply chain / CI**: `cargo-audit` (RustSec advisories) and `cargo-deny` (license/duplicate/source policy) — both confirmed still the standard pairing in 2026; `cargo-vet` is the heavier option for orgs with strict supply-chain requirements (finance, government, infra).

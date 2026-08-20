@@ -1,6 +1,10 @@
 # Glassmorphism in Sketch
 
-Sketch has no native glass effect. Apple's Liquid Glass as defined in iOS 26 is not replicable natively in Sketch -- Figma's Glass effect (exited beta January 2026) has no Sketch equivalent. Use the manual layering technique below for navigation elements that need a glass treatment.
+Sketch has a native **Glass** effect (shipped in the 2025.2.1 "Barcelona" release, August 2025) -- it is not manual-only. Apply it via the `+` next to **Effects** in the Inspector → **Glass**. Two modes: **Auto** (a standard frosted-glass appearance matching Apple's platform default -- use this for iOS/iPadOS/macOS work) and **Custom**, which exposes seven parameters: Blur, Distortion (surface waviness), Depth (blur edge behavior simulating glass thickness), Chromatic Aberration, Brightness, Saturation, and Specular Highlights.
+
+Glass applies to Shapes, Images, Text, Frames, and Graphics. It does **not** apply to Groups or Symbol Instances directly -- put the effect on a Shape or Frame layer inside the Symbol, not on a Group wrapping the stack.
+
+Use native Glass by default. Fall back to the manual layering technique below only when: matching this system's explicit Figma glassmorphism token architecture (separate Frost/Fill/Border/Shadow layers, each independently tunable and each mapped to its own token) matters more than using the native effect; the glass needs to sit on a Group; or the file targets a Sketch version older than 2025.2.1.
 
 ## Contents
 - [Manual Glass Technique](#manual-glass-technique)
@@ -42,14 +46,14 @@ Highlight strokes simulate the light source. Keep all glass elements using the s
 
 ## Glass Component as Symbol
 
-Wrap the full layer stack into a Symbol. Expose overrides for:
+Wrap the full layer stack (manual technique) or the single Glass-effect layer (native technique) into a Symbol. Expose overrides for:
 - Background image/content (nested Symbol)
-- Frost intensity (layer visibility toggle for light/medium/heavy frost variants)
+- Frost intensity (layer visibility toggle for light/medium/heavy frost variants, or a Custom-mode Blur override on the native effect)
 - Content (nested Symbol for whatever sits on the glass)
 
 ## Per-Context Tuning
 
-Frost is Background Blur intensity -- tune per context, same as the Figma system's Frost parameter:
+Frost is Background Blur intensity (manual) or the Custom Blur parameter (native) -- tune per context, same as the Figma system's Frost parameter:
 
 - Nav bar: 12-16px blur, fill white 10%
 - Sheet: 24-32px blur, fill white 15%

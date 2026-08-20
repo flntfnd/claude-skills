@@ -62,7 +62,7 @@ springConfig.FinalValue = 0f;
 contentVisual.StartAnimation("Offset.X", springConfig);
 ```
 
-`[Unverified]` A Limited Access Feature called the CompositionEngine API shipped in Windows App SDK 2.3.1 (July 2026), letting an app hand Composition API execution to the OS compositor engine directly. It's gated behind Microsoft approval for production use, so it doesn't change the `ElementCompositionPreview`-based patterns above for typical app code -- confirm against current Windows App SDK docs before assuming it applies to a given project.
+CompositionEngine is a real Limited Access Feature, confirmed in the Windows App SDK 2.3.1 (July 17, 2026) release notes: it lets an app opt into using the OS itself as the engine for the Composition APIs, instead of the default model where the `Microsoft.UI.Composition` compositor runs entirely within the app process and only sees pixels it drew itself. It's marked unstable and gated behind Microsoft's Limited Access Feature approval process, so it doesn't change the `ElementCompositionPreview`-based patterns above for typical app code. `[Inference]` Microsoft's official Visual layer docs (learn.microsoft.com) haven't been updated to describe its API surface as of this writing, so treat implementation specifics beyond "what it's for" as unconfirmed until Microsoft publishes API docs for it.
 
 ## Win2D (Custom 2D Drawing)
 

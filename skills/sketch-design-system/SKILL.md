@@ -1,6 +1,6 @@
 ---
 name: sketch-design-system
-description: Rob's opinionated process for building Sketch design systems (iOS/iPadOS/macOS, Android, Web) on the local Sketch MCP server (Sketch 2025.2.4+, non-App-Store build; run_code/get_screenshot tools). Covers gates checked every session -- dark canvas before any Artboard or Symbol exists, no empty pages, Sketch token/Color Variable names must match the codebase exactly -- plus Figma-to-Sketch terminology, Color Variables and Tokens Studio sets, Symbols and Symbol Overrides in place of components/variants, Smart Layout, Library setup and sync, manual glassmorphism layering (no native glass in Sketch), building from scratch vs. replicating an existing app, minimum screen set per platform, Dev-Mode-equivalent handoff via Sketch Cloud, and Sketch execution technique for all 14 visual styles. Use when building, auditing, or extending a Sketch design system; creating Symbols, Color Variables, or Tokens Studio sets; applying a visual style in Sketch; replicating an app's UI; or preparing a Sketch file for handoff.
+description: Rob's opinionated process for building Sketch design systems (iOS/iPadOS/macOS, Android, Web) on the local Sketch MCP server (Sketch 2025.2.4+, non-App-Store build; run_code/get_screenshot tools). Covers gates checked every session -- dark canvas before any Frame or Symbol exists, no empty pages, Sketch token/Color Variable names must match the codebase exactly -- plus Figma-to-Sketch terminology, Color Variables and non-color token docs (no Tokens Studio equiv.), Symbols and Symbol Overrides in place of components/variants, Smart Layout, Library setup/sync, native + manual glass/glassmorphism layering, building from scratch vs. replicating an existing app, minimum screen set per platform, Dev-Mode-equivalent handoff via Sketch Cloud, and Sketch execution technique for all 14 visual styles. Use when building, auditing, or extending a Sketch design system; creating Symbols, Color Variables, or token specs; applying a visual style in Sketch; replicating an app's UI; or preparing a Sketch file for handoff.
 ---
 
 # Sketch Design Systems
@@ -13,9 +13,9 @@ Sketch has no equivalent of an official Figma-plugin-style MCP skill installed o
 
 | Topic | Reference |
 | --- | --- |
-| Figma↔Sketch terminology map, Color Variables, Tokens Studio token sets, typography | [reference/token-architecture.md](reference/token-architecture.md) |
+| Figma↔Sketch terminology map, Color Variables, non-color token docs (no Tokens Studio equivalent), typography | [reference/token-architecture.md](reference/token-architecture.md) |
 | Symbols, Symbol Overrides, variants via Symbol groups, Smart Layout, Libraries | [reference/symbols-and-libraries.md](reference/symbols-and-libraries.md) |
-| Manual glass/glassmorphism layering technique (no native glass in Sketch) | [reference/glassmorphism.md](reference/glassmorphism.md) |
+| Native Glass effect and manual glass/glassmorphism layering technique | [reference/glassmorphism.md](reference/glassmorphism.md) |
 | Build-from-scratch and replicate-existing-app order of operations, file structure, minimum screen set, Dev handoff, accessibility, anti-patterns | [reference/workflows-and-handoff.md](reference/workflows-and-handoff.md) |
 | Sketch-specific execution technique for all 14 visual styles (Symbols, Layer Styles, Color Variables per style) | [reference/style-implementations.md](reference/style-implementations.md) |
 
@@ -30,9 +30,9 @@ const page = document.currentPage();
 const darkGrey = MSColor.colorWithRed_green_blue_alpha(0.118, 0.118, 0.118, 1.0);
 page.setCanvasColor(darkGrey);
 ```
-If `setCanvasColor` is unavailable in the running Sketch version, use **File > Document Settings → Canvas Color → `#1E1E1E`** manually. For individual Artboard backgrounds: select the Artboard → Inspector → Background Color → `#1E1E1E` (or transparent if the Artboard background shouldn't appear in exports). Verify: the canvas surrounding all Artboards is dark grey, never white.
+If `setCanvasColor` is unavailable in the running Sketch version, use **File > Document Settings → Canvas Color → `#1E1E1E`** manually. For individual Frame backgrounds: select the Frame → Inspector → Background Color → `#1E1E1E` (or transparent if the Frame background shouldn't appear in exports). Verify: the canvas surrounding all Frames is dark grey, never white.
 
-**No empty pages:** if a 🎨 Tokens page exists, the Color Variables and Tokens Studio sets go on it before the 🎛 Symbols page is touched.
+**No empty pages:** if a 🎨 Tokens page exists, the Color Variables and the non-color token spec go on it before the 🎛 Symbols page is touched.
 
 **Token names:** read `apple-platform`, `android-platform`, or `web-platform` for the existing token architecture and use those names verbatim. If the library doesn't exist yet, build it from [reference/token-architecture.md](reference/token-architecture.md).
 

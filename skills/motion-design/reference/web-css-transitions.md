@@ -49,7 +49,7 @@ CSS has no native spring physics function. `linear()` (Baseline-supported across
 
 ## CSS Scroll-Driven Animations (native)
 
-No JavaScript. Runs on the compositor thread. Supported across current Chrome, Edge, Firefox, and Safari -- this is now baseline-safe for production use, not an enhancement layered behind a feature check for most audiences. Keep the `@supports` fallback below only if you need to support older browser versions still in your analytics.
+No JavaScript. Runs on the compositor thread. Supported in current Chrome, Edge, and Safari (Safari shipped it in Safari 26). Firefox has not shipped it in stable -- it's still behind the `layout.css.scroll-driven-animations.enabled` flag as of mid-2026, on by default only in Nightly, though it's a named Interop 2026 priority. MDN marks `animation-timeline` outside Baseline for exactly this reason. Treat the `@supports` fallback below as required for any audience that includes current Firefox, not just older browser versions.
 
 ```css
 /* Scroll progress timeline -- tied to scroll container position */
@@ -91,7 +91,7 @@ No JavaScript. Runs on the compositor thread. Supported across current Chrome, E
 }
 ```
 
-Progressive enhancement pattern (still worth keeping for the long tail of older browser versions):
+Progressive enhancement pattern (required today for current Firefox, not just the long tail of older browser versions):
 
 ```css
 /* Base state -- works everywhere */

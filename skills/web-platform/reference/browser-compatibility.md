@@ -13,7 +13,7 @@ Newer, reached Baseline more recently in 2026 — verify current support before 
 - CSS scroll-driven animations (`animation-timeline`, `scroll()`, `view()`)
 - `contrast-color()` function
 - `:active-view-transition` pseudo-class
-- Style queries (`@container style(...)`) — landed in Firefox in 2026, check the other two engines
+- Style queries on custom properties (`@container style(...)`) reached Baseline newly available in May 2026 once Firefox 151 shipped — Chrome and Safari already had it. Style queries on regular CSS properties (`style(font-weight: bold)`) aren't supported anywhere yet
 
 [Unverified]: exact browser version numbers and "widely available" dates drift constantly — confirm current status at web.dev/baseline or caniuse before shipping a feature to production without a fallback, rather than trusting this list as permanently current.
 

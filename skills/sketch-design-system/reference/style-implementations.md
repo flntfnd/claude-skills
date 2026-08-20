@@ -1,6 +1,6 @@
 # Style Implementations in Sketch
 
-Full style definitions -- what each style is, its token values, component rules, native iOS/Android/Web implementation -- live in the `visual-styles` skill. This file covers only how to execute those decisions inside Sketch: Symbols, Color Variables, Layer Styles, and the manual techniques Sketch requires in place of Figma's native features (Auto Layout → Smart Layout, Glass effect → manual layering, Variants → Symbol groups).
+Full style definitions -- what each style is, its token values, component rules, native iOS/Android/Web implementation -- live in the `visual-styles` skill. This file covers only how to execute those decisions inside Sketch: Symbols, Color Variables, Layer Styles, and the substitutions Sketch requires in place of Figma's native features (Auto Layout → Smart Layout, Variants → Symbol groups, Tokens Studio → a documented non-color token spec since Tokens Studio doesn't run in Sketch). Sketch's own Glass effect (native, since 2025.2.1) covers most glass work directly -- see [glassmorphism.md](glassmorphism.md).
 
 All Sketch work goes through the MCP server -- see the main `sketch-design-system` SKILL.md for setup.
 
@@ -28,8 +28,8 @@ All Sketch work goes through the MCP server -- see the main `sketch-design-syste
 Warm neutrals, generous spacing, serif display type, hairline dividers.
 
 **Structural requirements:**
-- **Navigation Symbol**: no fill, no border, no background -- just a Text layer for the brand and link Text layers, sitting at the top of the Artboard. The nav Symbol's frame must be transparent.
-- **Hero Artboard region**: serif display Text Style at Light (300) weight, padded vertically with `spacing/xxl` (64px+) above and below. Subtext in regular sans, comfortable reading size.
+- **Navigation Symbol**: no fill, no border, no background -- just a Text layer for the brand and link Text layers, sitting at the top of the Frame. The nav Symbol's frame must be transparent.
+- **Hero Frame region**: serif display Text Style at Light (300) weight, padded vertically with `spacing/xxl` (64px+) above and below. Subtext in regular sans, comfortable reading size.
 - **Content list Symbols**: each item is a row inside a Group, separated by an instance of the `Divider/Hairline` Layer Style or Smart Layout vertical gap. Never wrapped in a card with a border or fill.
 - **Section dividers**: Layer Style `Divider/Hairline` (0.5-1px, warm-tinted Color Variable) is the only horizontal rule. No 2px+ rules anywhere.
 - **CTA Symbols**: text-only, or 1px outlined Text + Border -- no filled rectangles for secondary actions.
@@ -63,7 +63,7 @@ Hard shadows, full-border containers, oversized type, high-contrast color.
 
 **Structural requirements:**
 - **Navigation Symbol**: solid brand-color Fill, Border bottom-only at 2-4px solid black (Top/Left/Right 0px, Bottom 2-4px, #000).
-- **Hero Symbol**: full-Artboard-width frame, Fill = brand Color Variable, corner radius 0 on every corner. Display Text Style at ExtraBold (800) or Black (900) weight on top.
+- **Hero Symbol**: full-width, spanning the entire Frame, Fill = brand Color Variable, corner radius 0 on every corner. Display Text Style at ExtraBold (800) or Black (900) weight on top.
 - **Content list items**: each row Symbol must be a CARD -- Border 2px solid #000 (Center), Layer Style `Shadow/Hard/Medium` (X:4 Y:4 Blur:0 Spread:0 #000 100%), corner radius 0. Not a divider-separated row -- replace any `Divider/*` list Symbol with the card structure.
 - **Interactive Symbols** (Button, Card, Arrow): two variants -- `/Default` (with `Shadow/Hard/*`) and `/Pressed` (Layer Style: none, position offset 4px right and 4px down). Wire Mouse Down → Pressed, Mouse Up → Default.
 - **Section background Symbols**: alternate `Semantic/Background/Primary` (white) and brand color. CTA section fills the entire frame with brand color.
@@ -98,8 +98,8 @@ Semantic/Border/Default      → #000000
 Monochrome, monospace, no decoration, structure through type alone.
 
 **Structural requirements:**
-- **Navigation**: plain Text layers at the top of the Artboard, no Symbol container, no Fill, no Border -- or one Text layer + a single `Divider/Heavy` rule below.
-- **Hero**: massive serif or monospace Display Text Style, 80-120pt. Subtext in body Text Style. No background Fill on the Artboard region.
+- **Navigation**: plain Text layers at the top of the Frame, no Symbol container, no Fill, no Border -- or one Text layer + a single `Divider/Heavy` rule below.
+- **Hero**: massive serif or monospace Display Text Style, 80-120pt. Subtext in body Text Style. No background Fill on the Frame region.
 - **Content lists**: raw text rows separated by `Divider/Heavy` applications, or a Symbol that's just a Text + bottom Border. No card containers.
 - **Section dividers**: `Divider/Heavy` Layer Style (1-2px solid black) is the only structural element -- no background-color section breaks.
 - **Buttons**: text with an optional 1px black Border rectangle, no Fill, no Shadow. Save as `Button/Pure/Default`.
@@ -115,34 +115,34 @@ Monochrome, monospace, no decoration, structure through type alone.
 
 ## 4. Liquid Glass / Glass Treatment in Sketch
 
-Sketch has no native glass effect. See [glassmorphism.md](glassmorphism.md) for the manual layering technique.
+Use Sketch's native **Glass** effect (Inspector → `+` next to Effects → Glass) -- **Auto** mode for a default-accurate Apple-platform look, **Custom** when a specific Blur/Distortion/Depth/Chromatic Aberration/Brightness/Saturation/Specular Highlights combination is required. Glass applies to Shapes, Images, Text, and Frames, not to Groups or Symbol Instances directly -- put it on the Shape or Frame layer inside the Symbol. See [glassmorphism.md](glassmorphism.md) for the manual layering fallback (older Sketch versions, or a Group target).
 
 **Structural requirements:**
-- **Background Artboard layer**: must contain rich content (gradient Layer Style, image, or photo Fill) before any glass Symbol is placed on top. Glass Symbols over a flat white Artboard render as opaque white -- the style is invisible without a rich background.
-- **Glass Symbol stack**: Background Blur + semi-transparent white Fill + 1px white inside-position Border + Drop Shadow for depth, all four layers in a single Symbol Master.
-- **Two glass variants** as Symbol Masters: `Glass/Regular` (Background Blur 16px, Fill rgba(255,255,255,0.10)) and `Glass/Clear` (Background Blur 6px, Fill rgba(255,255,255,0.05)).
+- **Background Frame layer**: must contain rich content (gradient Layer Style, image, or photo Fill) before any glass Symbol is placed on top. Glass over a flat white Frame renders as opaque white -- the style is invisible without a rich background.
+- **Glass Symbol**: a Shape or Frame layer with the native Glass effect (Custom mode) plus a 1px white inside-position Border and a Drop Shadow for depth, built as a single Symbol Source.
+- **Two glass variants** as Symbol Sources: `Glass/Regular` (Custom Blur ~16px equivalent, higher Brightness/Saturation) and `Glass/Clear` (Custom Blur ~6px equivalent, lower Brightness/Saturation) -- tune the Custom parameters until each reads as regular vs. clear; Auto mode doesn't expose this distinction.
 - **Navigation use only**: glass Symbols belong on `NavBar/Glass`, `TabBar/Glass`, `Toolbar/Glass` -- never on content Symbols (cards, list rows, images).
-- **Content extends behind the glass layer** -- the Artboard hierarchy puts scrollable content beneath the navigation glass, edge-to-edge.
+- **Content extends behind the glass layer** -- the Frame hierarchy puts scrollable content beneath the navigation glass, edge-to-edge.
 
-**Wrong if:** a Glass Symbol sits over a flat-color Artboard (no gradient, image, or photo Fill underneath); glass is applied to content Symbols instead of navigation; the Background Blur effect is missing from the Symbol stack; the Border on a glass Symbol uses a dark color rather than semi-transparent white; Liquid Glass is attempted on Web or Android Artboards (use Glassmorphism / style #5 instead).
+**Wrong if:** a Glass Symbol sits over a flat-color Frame (no gradient, image, or photo Fill underneath); glass is applied to content Symbols instead of navigation; the Glass effect is missing from the Symbol (a manually faked blur substituted without reason); the Border on a glass Symbol uses a dark color rather than semi-transparent white; Liquid Glass is attempted on Web or Android Frames (use Glassmorphism / style #5 instead).
 
-Wrap the full stack in a Symbol with overrides for the content layer. Both `.regular` and `.clear` variants use the same highlight border and shadow treatment.
+Wrap the Shape/Frame carrying the Glass effect in a Symbol with overrides for the content layer. Both `.regular` and `.clear` variants use the same highlight border and shadow treatment.
 
 ---
 
 ## 5. Glassmorphism / Frosted in Sketch
 
-Same manual technique as Liquid Glass. Background Blur is the primary tool.
+Same native Glass effect as Liquid Glass (style #4) -- this style uses it more heavily and tunes it looser (more Blur, less Specular Highlights/Chromatic Aberration) for a frosted rather than crystalline look. Fall back to manual layering (see [glassmorphism.md](glassmorphism.md)) only if the file targets pre-2025.2.1 Sketch or the target layer is a Group.
 
 **Structural requirements:**
-- **Background Artboard layer**: vivid gradient (Linear Gradient Fill on a full-Artboard rectangle), hero image, or deep-color field. All glass Symbols sit on top -- without rich content underneath, glass is invisible.
-- **Glass Symbol stack** per Symbol Master: Fill white 12% (light mode) / 8% (dark mode); Background Blur 16px standard, 24-32px sheets, 32-48px modals; Border 1px white 25% opacity, position Inside; Drop Shadow X:0 Y:8 Blur:32 #000 12% for depth; optional inner highlight (top-edge 1px white 30% as a separate inset rectangle).
-- **Three Symbol variants**: `Glass/Nav` (12-16px blur), `Glass/Sheet` (24-32px), `Glass/Modal` (32-48px) -- tune blur per surface depth.
+- **Background Frame layer**: vivid gradient (Linear Gradient Fill on a full-Frame rectangle), hero image, or deep-color field. All glass Symbols sit on top -- without rich content underneath, glass is invisible.
+- **Glass Symbol** per Symbol Source: native Glass effect, Custom mode -- Blur tuned to 16px-equivalent standard / 24-32px-equivalent for sheets / 32-48px-equivalent for modals; Brightness/Saturation raised so background color reads through; Specular Highlights low (frosted, not crystalline). Add a 1px white 25%-opacity inside Border and a Drop Shadow X:0 Y:8 Blur:32 #000 12% for depth; optional inner highlight (top-edge 1px white 30% as a separate inset rectangle).
+- **Three Symbol variants**: `Glass/Nav` (lighter blur), `Glass/Sheet` (medium), `Glass/Modal` (heaviest) -- tune the Glass effect's Blur parameter per surface depth.
 - **Scrim sub-layer** for legibility over unpredictable content: a Linear Gradient Fill rectangle inside the glass Symbol, rgba(0,0,0,0.15) → transparent, for dark text.
 
-**Wrong if:** Background Blur is missing or 0; the glass Symbol Fill is at 100% opacity (must be 8-20%); the Border uses a dark color instead of semi-transparent white; glass sits over a flat solid Color Variable rather than a gradient or image; all glass Symbols use the same blur value regardless of depth role.
+**Wrong if:** the Glass effect (or, on the manual fallback, Background Blur) is missing or at 0; the glass Symbol's fill/tint is opaque rather than letting background content through; the Border uses a dark color instead of semi-transparent white; glass sits over a flat solid Color Variable rather than a gradient or image; all glass Symbols use the same Blur value regardless of depth role.
 
-Per-context tuning: nav bar 12-16px blur / fill white 10%; sheet 24-32px / white 15%; modal 32-48px / white 18%.
+Per-context tuning: nav bar lighter blur / fill white 10% equivalent; sheet medium blur / white 15%; modal heaviest blur / white 18%.
 
 ---
 
@@ -151,12 +151,12 @@ Per-context tuning: nav bar 12-16px blur / fill white 10%; sheet 24-32px / white
 Dual shadows (light upper-left, dark lower-right) on a same-color background.
 
 **Structural requirements:**
-- **Single base color across the entire Artboard**: page background, every Symbol background, every Card Symbol fill all reference the same Color Variable `Semantic/Background/Neumorphic`. Different fills = wrong style.
+- **Single base color across the entire Frame**: page background, every Symbol background, every Card Symbol fill all reference the same Color Variable `Semantic/Background/Neumorphic`. Different fills = wrong style.
 - **Raised Symbols** use the dual-shadow Layer Style `Surface/Neumorphic/Default`: Shadow 1 (X:-4 Y:-4 Blur:8, white 70%) + Shadow 2 (X:4 Y:4 Blur:8, black 20%). No Border. Fill = base color.
 - **Pressed/active Symbols** use the inset variant `Surface/Neumorphic/Pressed`: Inner Shadow 1 (X:-2 Y:-2 Blur:6, white 70%) + Inner Shadow 2 (X:2 Y:2 Blur:6, black 20%). No Border.
 - **Two-variant Symbols**: every interactive Symbol (Button, Toggle, Card-as-Button) needs `/Default` (raised) and `/Pressed` (inset) variants wired in the prototype.
 - **No Borders anywhere** -- depth is exclusively shadow-based.
-- **Generous corner radius**: 16-24px on interactive Symbols, applied via a Tokens Studio radius token.
+- **Generous corner radius**: 16-24px on interactive Symbols, matching the `radius` value documented on the Tokens page (see [token-architecture.md](token-architecture.md) -- Sketch has no Tokens Studio equivalent, so this is a hand-applied documented value, not a bound token).
 
 **Wrong if:** any Symbol has a Fill different from the base `Semantic/Background/Neumorphic`; any Symbol has a Border > 0 width; any Layer Style uses a single directional Drop Shadow instead of the dual pair; the Pressed state changes color rather than swapping to inset shadows; text contrast against the base falls below WCAG AA 4.5:1 -- neumorphism's biggest failure mode.
 
@@ -202,10 +202,10 @@ Stagger: 0.03s per character
 Dark surfaces, neon accents, glow effects, grid backgrounds.
 
 **Structural requirements:**
-- **Artboard background**: deep near-black Color Variable `Semantic/Background/Primary` (#0A0A0F), not generic dark grey. Optional low-opacity radial gradient from center for subtle depth.
+- **Frame background**: deep near-black Color Variable `Semantic/Background/Primary` (#0A0A0F), not generic dark grey. Optional low-opacity radial gradient from center for subtle depth.
 - **Glow Layer Style** `Glow/Small` applied to neon-accented Symbols (active nav items, primary CTAs, status indicators): three stacked Drop Shadows, all Blur/Spread 0 spread, accent Color Variable at decreasing opacities (80% → 40% → 20%). Sketch supports multiple shadows on one layer.
-- **Grid background Symbol** `Background/Grid`: dark-base rectangle plus two Line Symbol Groups (horizontal, vertical) at 40px intervals, accent color 5-8% opacity. Used as the Artboard base for every Futuristic screen.
-- **Card Symbols**: 1px Border, accent Color Variable at 15-20% opacity, Fill slightly lighter than the Artboard background. Hover variant brightens the Border to full accent + applies `Glow/Small`.
+- **Grid background Symbol** `Background/Grid`: dark-base rectangle plus two Line Symbol Groups (horizontal, vertical) at 40px intervals, accent color 5-8% opacity. Used as the Frame base for every Futuristic screen.
+- **Card Symbols**: 1px Border, accent Color Variable at 15-20% opacity, Fill slightly lighter than the Frame background. Hover variant brightens the Border to full accent + applies `Glow/Small`.
 - **Data text** uses monospace Text Style `Mono/Data` for numbers, readouts, status text -- tabular figures enabled in OpenType features.
 - **Minimal corner radius** — 0-4px maximum. Futurism is angular.
 
@@ -222,7 +222,7 @@ Semantic/Accent/Secondary     → #A855F7  (electric purple)
 
 **Glow Layer Style** `Glow/Small`: Shadow 1 X0 Y0 blur 8 spread 0 accent 80%; Shadow 2 X0 Y0 blur 16 spread 0 accent 40%; Shadow 3 X0 Y0 blur 32 spread 0 accent 20%.
 
-**Grid Background Symbol** `Background/Grid`: dark rectangle + two semi-transparent line groups (horizontal/vertical) at 40px intervals, accent 5-8% opacity, as the base Artboard background for all Futuristic screens.
+**Grid Background Symbol** `Background/Grid`: dark rectangle + two semi-transparent line groups (horizontal/vertical) at 40px intervals, accent 5-8% opacity, as the base Frame background for all Futuristic screens.
 
 ---
 
@@ -232,9 +232,9 @@ Modular card grid layout. All cards share the same corner radius.
 
 **Structural requirements:**
 - **Explicit column grid** via View > Canvas > Layout Settings -- typically 4 or 6 columns with consistent gutter. Bento cells span 1, 2, or 3 columns. The grid IS the design.
-- **At least three distinct cell sizes** as Symbol Masters: `BentoCell/1x1` (square), `BentoCell/2x1` (wide), `BentoCell/2x2` (featured). Equal-size grids are card grids, not Bento.
-- **Identical corner radius across every cell Symbol**: 24-32px via a Tokens Studio radius token (`radius/bento`) shared by all cells.
-- **Visible gap between cells**: 12-20px, the Artboard background showing through -- set via Smart Layout gap on the parent Group.
+- **At least three distinct cell sizes** as Symbol Sources: `BentoCell/1x1` (square), `BentoCell/2x1` (wide), `BentoCell/2x2` (featured). Equal-size grids are card grids, not Bento.
+- **Identical corner radius across every cell Symbol**: 24-32px, matching the documented `radius/bento` value on the Tokens page, shared by all cells.
+- **Visible gap between cells**: 12-20px, the Frame background showing through -- set via Smart Layout gap on the parent Group.
 - **Featured cell** (largest, usually 2x2) uses the brand or accent Color Variable as Fill; other cells use `Semantic/Background/Secondary`.
 - **One concept per cell** -- a single content slot via nested Symbol override, not mixed content like headline + chart + button + image in one cell.
 
@@ -249,7 +249,7 @@ BentoCell/2x1  — wide card (2 columns, 1 row height)
 BentoCell/1x2  — tall card (1 column, 2 row heights)
 BentoCell/2x2  — featured card (2 columns, 2 row heights)
 ```
-Each cell: corner radius 24-32px (via Tokens Studio), background fill via Color Variable, content area as an exposed nested Symbol override.
+Each cell: corner radius 24-32px (matching the documented Tokens page value), background fill via Color Variable, content area as an exposed nested Symbol override.
 
 ---
 
@@ -287,13 +287,13 @@ Caption/Editorial   — 12pt regular, secondary text color
 Flowing shapes, natural color palette, pill shapes, flowing curves.
 
 **Structural requirements:**
-- **Container Symbols are blob shapes**, not rectangles. Use the Pen tool or Vector Network to create irregular organic forms, saved as `Shape/Blob/01` through `Shape/Blob/06` Symbol Masters. Standard rounded rectangles, even with large radius, are not Organic.
-- **Background blob layer on every Artboard**: instances of `Shape/Blob/*` positioned behind content, filled with gradient Color Variables (`Gradient/Sunrise`, `Gradient/Forest`) -- decorative depth, not containers.
-- **Pill shapes on interactive elements**: corner radius set to maximum (Sketch caps at 50%, producing a pill). Apply via Tokens Studio `radius/pill` on Button Symbols.
+- **Container Symbols are blob shapes**, not rectangles. Use the Pen tool or Vector Network to create irregular organic forms, saved as `Shape/Blob/01` through `Shape/Blob/06` Symbol Sources. Standard rounded rectangles, even with large radius, are not Organic.
+- **Background blob layer on every Frame**: instances of `Shape/Blob/*` positioned behind content, filled with gradient Color Variables (`Gradient/Sunrise`, `Gradient/Forest`) -- decorative depth, not containers.
+- **Pill shapes on interactive elements**: corner radius set to maximum (Sketch caps at 50%, producing a pill). Document this as `radius/pill` on the Tokens page and apply it by hand on Button Symbols.
 - **Color Variables from a nature palette**: `Semantic/Accent/Terracotta`, `Semantic/Accent/Sage`, `Semantic/Accent/Sky`, `Semantic/Accent/Sand`. No corporate blue, no pure black, no pure white.
 - **Asymmetric layout**: text columns offset rather than centered, Symbols that don't snap to a strict grid. Smart Layout spacing uses irregular values (18, 28, 44) rather than 16, 24, 40.
 
-**Wrong if:** container Symbols are rectangles even with large radius applied; Artboard backgrounds are a flat Color Variable Fill with no `Shape/Blob/*` instances behind content; the color palette includes corporate blues, pure black, or pure white; the layout is symmetrically centered on a strict grid; spacing tokens are exact 8pt multiples rather than the irregular organic values.
+**Wrong if:** container Symbols are rectangles even with large radius applied; Frame backgrounds are a flat Color Variable Fill with no `Shape/Blob/*` instances behind content; the color palette includes corporate blues, pure black, or pure white; the layout is symmetrically centered on a strict grid; spacing tokens are exact 8pt multiples rather than the irregular organic values.
 
 **Blob shapes:** full vector path editing via the Pen tool or Vector Network, saved as Symbols for background layers -- fill via Color Variable, used as background layers, not containers.
 
@@ -312,17 +312,17 @@ Semantic/Accent/Sand        → #D4B896
 Grain overlay as a shared Symbol applied to all screens.
 
 **Structural requirements:**
-- **Global noise overlay Symbol** `Effect/Noise/Subtle`, placed at the TOP of the layer stack on every Artboard -- without this, the style isn't applied. A 200%-Artboard rectangle with noise Fill, blend mode Overlay, opacity 3-5%.
-- **Per-surface intensity variants** as Symbol Masters: `Effect/Noise/Subtle` (3%), `Effect/Noise/Medium` (5-7%), `Effect/Noise/Heavy` (12-15%) -- pick per surface, Artboards subtle, hero elements heavier.
+- **Global noise overlay Symbol** `Effect/Noise/Subtle`, placed at the TOP of the layer stack on every Frame -- without this, the style isn't applied. A rectangle sized 200% of the Frame, with noise Fill, blend mode Overlay, opacity 3-5%.
+- **Per-surface intensity variants** as Symbol Sources: `Effect/Noise/Subtle` (3%), `Effect/Noise/Medium` (5-7%), `Effect/Noise/Heavy` (12-15%) -- pick per surface, Frames subtle, hero elements heavier.
 - **Color Variables warm or earthy, slightly desaturated.** Flat saturated colors fight the texture -- the palette should read as "printed," not "emitted."
-- **Sketch native Noise fill** as an alternative to the Symbol approach: any Fill, switch to Noise type, density 15-25%, opacity 0.03-0.05, applied as a top-layer Fill on the Artboard.
+- **Sketch native Noise fill** as an alternative to the Symbol approach: any Fill, switch to Noise type, density 15-25%, opacity 0.03-0.05, applied as a top-layer Fill on the Frame.
 - **Typography**: humanist sans or warm serif Text Styles -- crisp but not sterile.
 
-**Wrong if:** no `Effect/Noise/*` Symbol or Noise Fill exists at the top of the Artboard layer stack; Color Variables resolve to high-saturation flat colors that fight the grain; overlay opacity is at default 100% (must be 3-15%); the blend mode is Normal rather than Overlay.
+**Wrong if:** no `Effect/Noise/*` Symbol or Noise Fill exists at the top of the Frame layer stack; Color Variables resolve to high-saturation flat colors that fight the grain; overlay opacity is at default 100% (must be 3-15%); the blend mode is Normal rather than Overlay.
 
 **Noise Overlay Symbol** `Effect/Noise/Subtle`: rectangle 200% width/height of target frame (oversized to fill on scroll), noise-pattern fill (grain PNG or Noise effect), blend mode Overlay, opacity 3-5%. Place at the top of the layer stack on every screen needing texture; nest a Symbol override for density variant.
 
-**Sketch native Noise:** in the Fill section, select Noise, density 15-25%, opacity 0.03-0.05, applied as a fill on the top layer of the Artboard.
+**Sketch native Noise:** in the Fill section, select Noise, density 15-25%, opacity 0.03-0.05, applied as a fill on the top layer of the Frame.
 
 ---
 
@@ -336,12 +336,12 @@ Terminal palettes, monospace type, CRT effects.
   - Amber CRT: bg #0F0A00 + text #FF9900
   - Windows 3.1: grey #C0C0C0 + blue title `#000080` + bevel borders
   - Early web: primary colors, Times New Roman, inline borders
-- **CRT Scan Line Symbol** `Effect/ScanLine`, placed at the top of every Artboard: repeating 2px-gap horizontal lines, Fill black 6-8%, blend mode Multiply. The most recognizable element -- it must be present.
+- **CRT Scan Line Symbol** `Effect/ScanLine`, placed at the top of every Frame: repeating 2px-gap horizontal lines, Fill black 6-8%, blend mode Multiply. The most recognizable element -- it must be present.
 - **Text Styles use monospace**: `Mono/Body` (JetBrains Mono or Courier New, regular). Display text either bitmap-style, or pixel type recreated as a Symbol from rectangles.
 - **Bevel border Layer Style** `Border/Bevel` (Windows 3.1 era): per-side Borders -- Top/Left 2px white 80%, Right/Bottom 2px gray 60%. Applied to dialog box and button Symbols.
 - **At least one overtly retro structural element** per screen: bevel chrome, blinking cursor (animated annotation), terminal prompt `>` indicator, or pixelated decorative element.
 
-**Wrong if:** no `Effect/ScanLine` Symbol exists on the Artboard; Text Styles use proportional sans-serif rather than monospace; the color palette mixes eras on the same screen; no structural retro element exists -- the design just looks like a dark theme with a green accent; borders are uniform on all sides instead of using `Border/Bevel` per-side asymmetry for the Windows 3.1 era.
+**Wrong if:** no `Effect/ScanLine` Symbol exists on the Frame; Text Styles use proportional sans-serif rather than monospace; the color palette mixes eras on the same screen; no structural retro element exists -- the design just looks like a dark theme with a green accent; borders are uniform on all sides instead of using `Border/Bevel` per-side asymmetry for the Windows 3.1 era.
 
 **Color Variables:**
 ```
@@ -361,7 +361,7 @@ Semantic/Accent/CRT-Green-Dim  → #003B00
 Maximum whitespace, minimal color, type-forward, no decoration.
 
 **Structural requirements:**
-- **Spacing tokens at 1.5-2x the default scale** via Tokens Studio. Section spacing `spacing/section` = 64px+, content padding `spacing/xl` = 32px. Whitespace IS the design.
+- **Spacing tokens at 1.5-2x the default scale**, documented on the Tokens page. Section spacing `spacing/section` = 64px+, content padding `spacing/xl` = 32px. Whitespace IS the design.
 - **Color palette of maximum 3 Color Variables**: `Semantic/Background/Primary` (warm off-white or deep warm grey), `Semantic/Text/Primary` (near-black or near-white, never pure), `Semantic/Interactive/Accent` (single muted color, used only for the single most important interactive element). Nothing else.
 - **Body Text Style at large size** (18-20pt), generous line-height (1.7-1.9), moderate tracking -- reading should feel unhurried.
 - **Navigation Symbol minimal to invisible**: small logo or title Text + one or two link Texts. No background Fill, no Border.
@@ -379,7 +379,7 @@ Semantic/Text/Secondary      → #888884 / #6A6A66
 Semantic/Interactive/Accent  → #6B9FBF (same both modes, muted)
 ```
 
-**Spacing:** extra-generous via Tokens Studio -- all section margins `spacing/section` (64px+), content padding `spacing/xl` (32px).
+**Spacing:** extra-generous, documented on the Tokens page -- all section margins `spacing/section` (64px+), content padding `spacing/xl` (32px).
 
 **Text Styles:** regular weight throughout; the only bold is `Label/Large` at Medium (500). No Black or ExtraBold weights.
 
@@ -395,7 +395,7 @@ All of the `visual-styles` skill's cross-style rules apply. Sketch-specific addi
 
 **Every Symbol gets all states.** The style determines what those states look like, not whether they exist.
 
-**Artboard naming matches screen names in code.** `iOS/Home/Default`, not `Screen 47 copy 3`.
+**Frame naming matches screen names in code.** `iOS/Home/Default`, not `Screen 47 copy 3`.
 
 **Library connections must be maintained.** Detached Symbols create inconsistency regardless of style.
 
