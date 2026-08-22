@@ -1,0 +1,61 @@
+# Extraction rules for forcedexposure.com.
+#
+# Rules are tried in order; the first non-empty result wins. The label-based
+# rules are structure-independent and should hold across layout changes. The
+# entries marked VERIFY depend on FE's actual markup and must be confirmed
+# against `fecrawl probe` output before a full crawl is trusted.
+
+[site]
+base_url = "https://www.forcedexposure.com"
+list_separators = ",/;"
+combined_split = '\s+[-–—]\s+'
+
+[listing]
+# VERIFY: seed listing pages and the product URL shape.
+seeds = [
+  "https://www.forcedexposure.com/BestSellers",
+  "https://www.forcedexposure.com/NewReleases",
+  "https://www.forcedexposure.com/Forthcoming",
+]
+link_selector = "a[href]"
+product_url_pattern = '/Catalog/[^/?#]+'
+next_page_selector = "a[rel=next]"
+
+# --- product fields ---------------------------------------------------------
+
+# VERIFY: the heading that carries "Artist - Title".
+[[product.combined]]
+type = "css"
+selector = "h1"
+
+[[product.combined]]
+type = "meta"
+name = "og:title"
+
+[[product.artist]]
+type = "label"
+label = 'artist\s*:?'
+
+[[product.title]]
+type = "label"
+label = '(?:title|album)\s*:?'
+
+[[product.genre]]
+type = "label"
+label = '(?:genre|style|category)\s*:?'
+
+[[product.genre]]
+type = "meta"
+name = "og:genre"
+
+[[product.label]]
+type = "label"
+label = '(?:label|imprint)\s*:?'
+
+[[product.catalog_no]]
+type = "label"
+label = 'cat(?:alog|alogue)?\s*(?:no\.?|number|#)?\s*:?'
+
+[[product.format]]
+type = "label"
+label = '(?:format|configuration)\s*:?'
