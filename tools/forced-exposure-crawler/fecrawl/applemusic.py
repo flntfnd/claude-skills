@@ -127,6 +127,41 @@ class AppleMusicLookup:
             time.sleep(min(2**attempt, 16) + random.uniform(0, 1))
         return []
 
+    def tracklist(self, album_url: str) -> list[dict]:
+        """Tracks of an album, given its Apple Music URL.
+
+        The album id is the trailing path component of the URL; the lookup
+        endpoint returns the album followed by its tracks.
+        """
+        album_id = album_url.rstrip("/").rsplit("/", 1)[-1]
+        if not album_id.isdigit():
+            return []
+
+        cached = self._cache_path(f"lookup:{album_id}")
+        if cached.exists():
+            payload = json.loads(cached.read_text(encoding="utf-8"))
+        elif self.offline:
+            return []
+        else:
+            params = {"id": album_id, "entity": "song", "limit": 200}
+            self._throttle()
+            try:
+                response = self._session.get(
+                    f"https://itunes.apple.com/lookup?{urlencode(params)}",
+                    timeout=self.timeout,
+                )
+                if not response.ok:
+                    return []
+                payload = response.json()
+                cached.write_text(json.dumps(payload), encoding="utf-8")
+            except (requests.RequestException, ValueError) as exc:
+                log.warning("iTunes tracklist error for %s: %s", album_id, exc)
+                return []
+
+        return [
+            r for r in payload.get("results", []) if r.get("wrapperType") == "track"
+        ]
+
     def find(self, artist: str, title: str) -> AppleMatch | None:
         term = f"{artist} {strip_format_suffixes(title)}".strip()
         for result in self._search(term):

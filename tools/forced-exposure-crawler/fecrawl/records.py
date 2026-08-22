@@ -20,6 +20,14 @@ class Release:
     formats: list[str] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)
 
+    # Apple Music resolution.
+    apple_url: str = ""
+    apple_genre: str = ""
+    # Tracks singled out by a write-up, or the opening track as a stand-in.
+    # Each is {"name": ..., "url": ...}; track_source records which of the two.
+    tracks: list[dict] = field(default_factory=list)
+    track_source: str = ""
+
     def to_json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False, sort_keys=True)
 
