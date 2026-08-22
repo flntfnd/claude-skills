@@ -1,11 +1,11 @@
 """Pick one representative track per release.
 
-A playlist built from whole albums runs to thousands of tracks; one track per
-release keeps it to hundreds. The track is chosen in this order:
+A playlist built from whole albums runs to thousands of tracks; taking only the
+tracks a write-up actually points at keeps it to hundreds. Selection is:
 
-  1. a track named in Forced Exposure's own write-up, confirmed against the
-     album's real tracklist
-  2. the opening track
+  1. every track named in Forced Exposure's own write-up, confirmed against the
+     album's real tracklist, however many that is
+  2. failing any such mention, the opening track alone
 
 Only track *titles* are read from the write-up, never its prose, and a title is
 only accepted once it matches an actual track on the album. That check is what
@@ -54,27 +54,43 @@ def candidate_titles(html: str) -> list[str]:
     return cleaned
 
 
-def choose_track(candidates: list[str], tracklist: list[dict]) -> tuple[dict | None, str]:
-    """Return (track, source) for a release.
+def select_tracks(
+    candidates: list[str], tracklist: list[dict]
+) -> tuple[list[dict], str]:
+    """Return (tracks, source) for a release.
 
-    `source` is "review" when the pick came from a validated mention and
-    "opening" when it fell back to track one, so the provenance of every pick
-    stays visible rather than being implied.
+    Every validated mention is kept, so a write-up that singles out six tracks
+    contributes six. `source` is "review" when the picks came from validated
+    mentions and "opening" when nothing matched and track one stood in, so the
+    provenance of each entry stays visible rather than implied.
     """
     if not tracklist:
-        return None, "none"
+        return [], "none"
 
     by_name = {fold(t.get("trackName", "")): t for t in tracklist if t.get("trackName")}
+
+    matched: dict[int, dict] = {}
     for candidate in candidates:
         folded = fold(candidate)
         if not folded:
             continue
-        if folded in by_name:
-            return by_name[folded], "review"
-        # A mention may carry a stray article or a partial phrase.
-        for name, track in by_name.items():
-            if len(folded) >= 6 and (folded in name or name in folded):
-                return track, "review"
+        track = by_name.get(folded)
+        if track is None:
+            # A mention may carry a stray article or be a partial phrase.
+            for name, option in by_name.items():
+                if len(folded) >= 6 and (folded in name or name in folded):
+                    track = option
+                    break
+        if track is not None:
+            # Keyed by identity so the same track named twice counts once.
+            matched[id(track)] = track
 
-    ordered = sorted(tracklist, key=lambda t: (t.get("discNumber") or 1, t.get("trackNumber") or 1))
-    return ordered[0], "opening"
+    if matched:
+        return _in_album_order(matched.values()), "review"
+    return _in_album_order(tracklist)[:1], "opening"
+
+
+def _in_album_order(tracks) -> list[dict]:
+    return sorted(
+        tracks, key=lambda t: (t.get("discNumber") or 1, t.get("trackNumber") or 1)
+    )

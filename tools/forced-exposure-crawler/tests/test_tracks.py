@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from fecrawl.tracks import candidate_titles, choose_track
+from fecrawl.tracks import candidate_titles, select_tracks
 
 TRACKLIST = [
     {"trackName": "Intro", "trackNumber": 1, "discNumber": 1},
@@ -46,35 +46,59 @@ def test_no_description_yields_no_candidates():
     assert candidate_titles("<html><body><p>no description here</p></body></html>") == []
 
 
-def test_validated_mention_wins_and_is_marked_as_such():
-    track, source = choose_track(["Amber Rain"], TRACKLIST)
-    assert track["trackName"] == "Amber Rain"
+def names(tracks):
+    return [t["trackName"] for t in tracks]
+
+
+def test_every_validated_mention_is_kept():
+    tracks, source = select_tracks(["Amber Rain", "Backwards"], TRACKLIST)
+    assert names(tracks) == ["Backwards", "Amber Rain"]  # album order
     assert source == "review"
 
 
-def test_unvalidated_candidates_fall_back_to_opening():
+def test_all_mentions_kept_however_many():
+    picked = ["Intro", "Backwards", "Amber Rain", "Fire of the Green Dragon"]
+    tracks, source = select_tracks(picked, TRACKLIST)
+    assert len(tracks) == 4
+    assert source == "review"
+
+
+def test_same_track_named_twice_counts_once():
+    tracks, _ = select_tracks(["Amber Rain", "amber rain", "AMBER RAIN"], TRACKLIST)
+    assert names(tracks) == ["Amber Rain"]
+
+
+def test_single_mention_yields_single_track():
+    tracks, source = select_tracks(["Amber Rain"], TRACKLIST)
+    assert names(tracks) == ["Amber Rain"] and source == "review"
+
+
+def test_unvalidated_candidates_fall_back_to_opening_only():
     # Quoted prose that is not a track on this album must not be taken as one.
-    track, source = choose_track(["US", "dehumanized"], TRACKLIST)
-    assert track["trackName"] == "Intro"
+    tracks, source = select_tracks(["US", "dehumanized"], TRACKLIST)
+    assert names(tracks) == ["Intro"]
     assert source == "opening"
 
 
-def test_no_mention_falls_back_to_opening():
-    track, source = choose_track([], TRACKLIST)
-    assert track["trackName"] == "Intro"
-    assert source == "opening"
+def test_no_mention_falls_back_to_opening_only():
+    tracks, source = select_tracks([], TRACKLIST)
+    assert names(tracks) == ["Intro"] and source == "opening"
 
 
-def test_opening_track_respects_disc_order():
-    shuffled = list(reversed(TRACKLIST))
-    track, _ = choose_track([], shuffled)
-    assert track["trackName"] == "Intro"
+def test_mix_of_real_and_noise_keeps_only_the_real():
+    tracks, source = select_tracks(["US", "Amber Rain", "dehumanized"], TRACKLIST)
+    assert names(tracks) == ["Amber Rain"] and source == "review"
+
+
+def test_ordering_is_by_disc_then_track():
+    tracks, _ = select_tracks(["Fire of the Green Dragon", "Backwards"], TRACKLIST)
+    assert names(tracks) == ["Backwards", "Fire of the Green Dragon"]
 
 
 def test_empty_tracklist_is_handled():
-    assert choose_track(["Amber Rain"], []) == (None, "none")
+    assert select_tracks(["Amber Rain"], []) == ([], "none")
 
 
 def test_case_and_punctuation_insensitive_match():
-    track, source = choose_track(["amber rain"], TRACKLIST)
-    assert track["trackName"] == "Amber Rain" and source == "review"
+    tracks, source = select_tracks(["amber rain"], TRACKLIST)
+    assert names(tracks) == ["Amber Rain"] and source == "review"
