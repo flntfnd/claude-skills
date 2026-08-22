@@ -1,9 +1,12 @@
 # Extraction rules for forcedexposure.com.
 #
-# Rules are tried in order; the first non-empty result wins. The label-based
-# rules are structure-independent and should hold across layout changes. The
-# entries marked VERIFY depend on FE's actual markup and must be confirmed
-# against `fecrawl probe` output before a full crawl is trusted.
+# Written against the live markup (probed 2026-08-22). Product pages carry a
+# flat run of label/value divs inside div.product-right:
+#
+#   <div class="meta-label">Genre</div><div class="meta-value">ROCK</div>
+#
+# The labels are unpunctuated, so every pattern is anchored to match the label
+# div exactly and the value is read from the following sibling.
 
 [site]
 base_url = "https://www.forcedexposure.com"
@@ -11,51 +14,51 @@ list_separators = ",/;"
 combined_split = '\s+[-–—]\s+'
 
 [listing]
-# VERIFY: seed listing pages and the product URL shape.
+# The sitemap index is the authoritative product enumeration; these curated
+# section indexes are what the Craft list has always been compiled from.
 seeds = [
-  "https://www.forcedexposure.com/BestSellers",
-  "https://www.forcedexposure.com/NewReleases",
-  "https://www.forcedexposure.com/Forthcoming",
+  "https://www.forcedexposure.com/New/NewIndex.html",
+  "https://www.forcedexposure.com/Best/BestIndex.html",
+  "https://www.forcedexposure.com/Forthcoming.html",
 ]
 link_selector = "a[href]"
-product_url_pattern = '/Catalog/[^/?#]+'
+product_url_pattern = '/Catalog/[^/?#]+/[^/?#]+\.html'
 next_page_selector = "a[rel=next]"
 
 # --- product fields ---------------------------------------------------------
 
-# VERIFY: the heading that carries "Artist - Title".
-[[product.combined]]
-type = "css"
-selector = "h1"
-
-[[product.combined]]
-type = "meta"
-name = "og:title"
-
 [[product.artist]]
 type = "label"
-label = 'artist\s*:?'
+label = '^artist\s*:?\s*$'
+scope = ".meta-label"
 
 [[product.title]]
 type = "label"
-label = '(?:title|album)\s*:?'
+label = '^title\s*:?\s*$'
+scope = ".meta-label"
 
 [[product.genre]]
 type = "label"
-label = '(?:genre|style|category)\s*:?'
-
-[[product.genre]]
-type = "meta"
-name = "og:genre"
+label = '^genre\s*:?\s*$'
+scope = ".meta-label"
 
 [[product.label]]
 type = "label"
-label = '(?:label|imprint)\s*:?'
+label = '^label\s*:?\s*$'
+scope = ".meta-label"
 
 [[product.catalog_no]]
 type = "label"
-label = 'cat(?:alog|alogue)?\s*(?:no\.?|number|#)?\s*:?'
+label = '^catalog\s*#?\s*:?\s*$'
+scope = ".meta-label"
 
 [[product.format]]
 type = "label"
-label = '(?:format|configuration)\s*:?'
+label = '^format\s*:?\s*$'
+scope = ".meta-label"
+
+# Fallback when the meta block is absent: the <title> is
+# "Forced Exposure | ARTIST: Title Format".
+[[product.combined]]
+type = "css"
+selector = "title"

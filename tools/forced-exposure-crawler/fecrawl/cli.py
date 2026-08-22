@@ -13,6 +13,7 @@ from .craft import merge, parse_existing, render
 from .fetch import FetchError, Fetcher
 from .parse import find_next_page, find_product_links, load_config, parse_product
 from .records import Release, read_jsonl, write_jsonl
+from .resolve import build_index, resolve
 
 log = logging.getLogger("fecrawl")
 
@@ -101,6 +102,29 @@ def cmd_crawl(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_resolve(args: argparse.Namespace) -> int:
+    """Match existing list entries to catalog URLs via the sitemap."""
+    sitemap_urls = [
+        u.strip() for u in Path(args.sitemap).read_text(encoding="utf-8").splitlines() if u.strip()
+    ]
+    index = build_index(sitemap_urls)
+    entries = parse_existing(Path(args.existing).read_text(encoding="utf-8"))
+
+    found, missing = [], []
+    for entry in entries:
+        url = resolve(entry.artist, entry.title, index)
+        (found if url else missing).append(url or f"{entry.artist} - {entry.title}")
+
+    Path(args.out).write_text("\n".join(found) + "\n", encoding="utf-8")
+    if args.unresolved:
+        Path(args.unresolved).write_text("\n".join(missing) + "\n", encoding="utf-8")
+    log.info(
+        "resolved %d/%d entries against %d sitemap URLs -> %s",
+        len(found), len(entries), len(sitemap_urls), args.out,
+    )
+    return 0
+
+
 def cmd_merge(args: argparse.Namespace) -> int:
     existing = parse_existing(Path(args.existing).read_text(encoding="utf-8")) if args.existing else []
     crawled = list(read_jsonl(args.releases)) if args.releases else []
@@ -144,6 +168,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--urls", default="urls.txt")
     p.add_argument("--out", default="releases.jsonl")
     p.set_defaults(func=cmd_crawl)
+
+    p = sub.add_parser("resolve", help="match existing entries to catalog URLs via the sitemap")
+    p.add_argument("--existing", required=True)
+    p.add_argument("--sitemap", required=True, help="file of product URLs from sitemap.xml")
+    p.add_argument("--out", default="resolved.txt")
+    p.add_argument("--unresolved", help="optional path for entries with no match")
+    p.set_defaults(func=cmd_resolve)
 
     p = sub.add_parser("merge", help="merge into the existing list, dedupe, render")
     p.add_argument("--existing", help="markdown export of the current Craft list")

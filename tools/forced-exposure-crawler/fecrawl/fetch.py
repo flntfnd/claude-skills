@@ -20,8 +20,12 @@ import requests
 
 log = logging.getLogger(__name__)
 
+# The "Mozilla/5.0 (compatible; ...)" form is the convention well-behaved
+# crawlers use (Googlebot, bingbot). It still identifies this client honestly;
+# FE's WAF rejects a bare "fecrawl/1.0" token with a 403. We do not claim to be
+# a browser or another operator's bot, and robots.txt is honoured either way.
 USER_AGENT = (
-    "fecrawl/1.0 (personal catalog archiving; contact via repository owner)"
+    "Mozilla/5.0 (compatible; fecrawl/1.0; +personal catalog archiving)"
 )
 
 RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})

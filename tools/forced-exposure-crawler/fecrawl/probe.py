@@ -54,7 +54,9 @@ def probe(html: str, url: str) -> dict:
                 }
             )
             continue
-        if text.endswith(":") and len(text) < 28:
+        # Labels are not always punctuated: FE uses a bare <div>Genre</div>
+        # followed by its value sibling.
+        if len(text) < 28 and (text.endswith(":") or text.isalnum() or " " in text):
             sibling = element.find_next_sibling()
             if isinstance(sibling, Tag):
                 value = _clean(sibling.get_text(" "))
