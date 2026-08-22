@@ -9,7 +9,9 @@ import sys
 from pathlib import Path
 
 from . import probe as probe_mod
+from .applemusic import AppleMusicLookup
 from .craft import merge, parse_existing, render
+from .enrich import enrich
 from .fetch import FetchError, Fetcher
 from .parse import find_next_page, find_product_links, load_config, parse_product
 from .records import Release, read_jsonl, write_jsonl
@@ -125,12 +127,38 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_enrich(args: argparse.Namespace) -> int:
+    """Attach Apple Music links and representative tracks."""
+    releases = list(read_jsonl(args.releases))
+    lookup = AppleMusicLookup(
+        Path(args.cache) / "apple",
+        delay=args.apple_delay,
+        country=args.country,
+        offline=args.offline,
+    )
+    stats = enrich(releases, lookup, _fetcher(args))
+    write_jsonl(args.out, releases)
+    print(
+        f"linked={stats['linked']} unlinked={stats['unlinked']} "
+        f"tracks_from_review={stats['tracks_from_review']} "
+        f"tracks_from_opening={stats['tracks_from_opening']} "
+        f"total_tracks={stats['total_tracks']}",
+        file=sys.stderr,
+    )
+    log.info("wrote %s", args.out)
+    return 0
+
+
 def cmd_merge(args: argparse.Namespace) -> int:
     existing = parse_existing(Path(args.existing).read_text(encoding="utf-8")) if args.existing else []
     crawled = list(read_jsonl(args.releases)) if args.releases else []
     result = merge(existing, crawled)
 
-    Path(args.out).write_text(render(result.entries, genre_line=not args.no_genre_line) + "\n", encoding="utf-8")
+    Path(args.out).write_text(render(
+            result.entries,
+            genre_line=not args.no_genre_line,
+            track_line=not args.no_track_line,
+        ) + "\n", encoding="utf-8")
     print(
         f"existing={len(existing)} crawled={len(crawled)} "
         f"added={result.added} collapsed={result.duplicates_collapsed} "
@@ -169,6 +197,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", default="releases.jsonl")
     p.set_defaults(func=cmd_crawl)
 
+    p = sub.add_parser("enrich", help="add Apple Music links and representative tracks")
+    p.add_argument("--releases", default="releases.jsonl")
+    p.add_argument("--out", default="enriched.jsonl")
+    p.add_argument("--apple-delay", type=float, default=3.0)
+    p.add_argument("--country", default="US")
+    p.set_defaults(func=cmd_enrich)
+
     p = sub.add_parser("resolve", help="match existing entries to catalog URLs via the sitemap")
     p.add_argument("--existing", required=True)
     p.add_argument("--sitemap", required=True, help="file of product URLs from sitemap.xml")
@@ -181,6 +216,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--releases", default="releases.jsonl")
     p.add_argument("--out", default="merged.md")
     p.add_argument("--no-genre-line", action="store_true")
+    p.add_argument("--no-track-line", action="store_true")
     p.set_defaults(func=cmd_merge)
 
     return parser

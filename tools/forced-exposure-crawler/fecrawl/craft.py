@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Iterable, Sequence
 
-from .normalize import dedupe_key
+from .normalize import dedupe_key, fold
 from .records import Release
 
 # "- [ARTIST — Title](url) (CATNO)" and the plainer "- ARTIST — Title".
@@ -114,15 +114,44 @@ def merge(existing: Sequence[Release], crawled: Iterable[Release]) -> MergeResul
     return result
 
 
-def render(entries: Sequence[Release], *, genre_line: bool = True) -> str:
-    """Render entries as Craft markdown, one genre line per entry."""
+def _genre_text(release: Release) -> str:
+    """FE's coarse bucket, refined by Apple's genre when it adds something."""
+    fe = (release.genre or "").strip()
+    apple = (release.apple_genre or "").strip()
+    if fe and apple and fold(apple) != fold(fe):
+        return f"{fe} / {apple}"
+    return fe or apple or "Unknown"
+
+
+def render(
+    entries: Sequence[Release],
+    *,
+    genre_line: bool = True,
+    track_line: bool = True,
+) -> str:
+    """Render entries as Craft markdown, one genre line per entry.
+
+    The headline links to Apple Music when the release resolved there and to
+    the catalog page otherwise, so every entry carries a working link.
+    """
     lines: list[str] = []
     for release in entries:
         label = f"{release.artist} — {release.title}"
-        head = f"[{label}]({release.url})" if release.url else label
+        link = release.apple_url or release.url
+        head = f"[{label}]({link})" if link else label
         if release.catalog_no:
             head = f"{head} ({release.catalog_no})"
         lines.append(f"- {head}")
+
         if genre_line:
-            lines.append(f"  - Genre: {release.genre or 'Unknown'}")
+            lines.append(f"  - Genre: {_genre_text(release)}")
+
+        if track_line and release.tracks:
+            rendered = ", ".join(
+                f"[{t['name']}]({t['url']})" if t.get("url") else t["name"]
+                for t in release.tracks
+            )
+            # Say plainly when the track is a stand-in rather than a pick.
+            suffix = "" if release.track_source == "review" else " (opening track)"
+            lines.append(f"  - Tracks{suffix}: {rendered}")
     return "\n".join(lines)
