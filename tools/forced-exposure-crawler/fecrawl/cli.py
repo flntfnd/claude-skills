@@ -139,8 +139,7 @@ def cmd_enrich(args: argparse.Namespace) -> int:
         # disabled every time the crawl is served from cache.
         offline=args.apple_offline,
     )
-    stats = enrich(releases, lookup, _fetcher(args))
-    write_jsonl(args.out, releases)
+    stats = enrich(releases, lookup, _fetcher(args), out_path=args.out)
     print(
         f"linked={stats['linked']} unlinked={stats['unlinked']} "
         f"tracks_from_review={stats['tracks_from_review']} "

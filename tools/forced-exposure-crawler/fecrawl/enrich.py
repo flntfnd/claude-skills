@@ -19,8 +19,15 @@ def enrich(
     fetcher: Fetcher,
     *,
     progress_every: int = 25,
+    out_path: str | None = None,
 ) -> dict[str, int]:
-    """Fill in apple_url, apple_genre and tracks in place. Returns counts."""
+    """Fill in apple_url, apple_genre and tracks in place. Returns counts.
+
+    Results are appended to `out_path` as they are produced. A long run can be
+    interrupted (this one has been), and since every API response is cached, a
+    restart re-does completed lookups for free rather than losing them.
+    """
+    handle = open(out_path, "w", encoding="utf-8") if out_path else None
     stats = {
         "linked": 0,
         "unlinked": 0,
@@ -58,9 +65,14 @@ def enrich(
             elif source == "opening":
                 stats["tracks_from_opening"] += 1
 
+        if handle is not None:
+            handle.write(release.to_json() + "\n")
+            handle.flush()
         if index % progress_every == 0:
             log.info("%d/%d enriched", index, len(releases))
 
+    if handle is not None:
+        handle.close()
     return stats
 
 
