@@ -130,9 +130,16 @@ def fold(text: str) -> str:
 
 
 def normalize_artist(artist: str) -> str:
-    """Fold an artist credit, collapsing all 'various artists' spellings."""
+    """Fold an artist credit, collapsing all 'various artists' spellings.
+
+    Joined credits are written differently either side: a shop lists a split as
+    "Alunah/Samavayo" where a streaming service lists "Alunah & Samavayo". The
+    connector carries no identity, so it is dropped and only the names compared.
+    """
     primary = _ARTIST_NOISE_RE.split(artist, maxsplit=1)[0]
     folded = fold(primary or artist)
+    if folded not in _VARIOUS_ARTISTS:
+        folded = " ".join(t for t in folded.split() if t != "and")
     if folded in _VARIOUS_ARTISTS:
         return "various artists"
     return folded

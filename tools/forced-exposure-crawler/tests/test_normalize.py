@@ -82,3 +82,21 @@ def test_distinct_releases_stay_distinct(left, right):
 def test_various_artists_normalizes():
     assert normalize_artist("V/A") == "various artists"
     assert normalize_artist("Various") == "various artists"
+
+
+def test_joined_credits_match_across_connectors():
+    # A shop writes a split with a slash; a streaming service uses "&".
+    assert dedupe_key("Alunah/Samavayo", "Embers of Belief") == dedupe_key(
+        "Alunah & Samavayo", "Embers of Belief"
+    )
+    assert normalize_artist("Keiji Haino/Jim O'Rourke") == normalize_artist(
+        "Keiji Haino & Jim O'Rourke"
+    )
+
+
+def test_dropping_the_connector_does_not_merge_different_artists():
+    assert normalize_artist("Alunah") != normalize_artist("Alunah & Samavayo")
+
+
+def test_various_artists_still_collapses():
+    assert normalize_artist("V/A") == "various artists"
