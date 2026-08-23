@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import random
+import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -42,6 +43,30 @@ def _strip_tracking(url: str) -> str:
     return url.split("?")[0]
 
 
+def artist_variants(artist: str) -> list[str]:
+    """Plausible readings of an FE artist credit, best guess first.
+
+    FE stores credits in inverted library order and in capitals, so about half
+    the catalog reads "FURY, BILLY". A comma is not proof of inversion though:
+    "TRAD, GRAS OCH STENAR" is the band's actual name, while
+    "DE ANGELIS, GUIDO & MAURIZIO" really is inverted, and both carry three
+    words after the comma. Rather than guess, offer both readings and let the
+    match against real Apple Music metadata decide which one exists.
+    """
+    artist = artist.strip()
+    variants: list[str] = [artist]
+
+    without_paren = re.sub(r"\s*\([^)]*\)", "", artist).strip()
+    if without_paren and without_paren != artist:
+        variants.append(without_paren)
+
+    for base in list(variants):
+        head, sep, tail = base.partition(",")
+        if sep and head.strip() and tail.strip():
+            variants.append(f"{tail.strip()} {head.strip()}")
+    return list(dict.fromkeys(v for v in variants if v))
+
+
 def _title_variants(title: str) -> set[str]:
     """Comparison forms for a title, with and without an edition suffix."""
     base = strip_format_suffixes(title)
@@ -50,11 +75,13 @@ def _title_variants(title: str) -> set[str]:
 
 def _is_match(release_artist: str, release_title: str, result: dict) -> bool:
     got_artist = normalize_artist(result.get("artistName", ""))
-    want_artist = normalize_artist(release_artist)
-    if not got_artist or not want_artist:
+    if not got_artist:
         return False
-    # One may carry extra members ("Albert Ayler" vs "Albert Ayler Trio").
-    if not (got_artist in want_artist or want_artist in got_artist):
+    wanted = [normalize_artist(v) for v in artist_variants(release_artist)]
+    # One side may carry extra members ("Albert Ayler" vs "Albert Ayler Trio").
+    if not any(
+        want and (got_artist in want or want in got_artist) for want in wanted
+    ):
         return False
 
     got_titles = _title_variants(result.get("collectionName", ""))
@@ -163,15 +190,36 @@ class AppleMusicLookup:
         ]
 
     def find(self, artist: str, title: str) -> AppleMatch | None:
-        term = f"{artist} {strip_format_suffixes(title)}".strip()
-        for result in self._search(term):
-            if _is_match(artist, title, result):
-                url = _strip_tracking(result.get("collectionViewUrl", ""))
-                if url:
-                    return AppleMatch(
-                        url=url,
-                        artist=result.get("artistName", ""),
-                        album=result.get("collectionName", ""),
-                        genre=result.get("primaryGenreName", ""),
-                    )
+        clean_title = strip_format_suffixes(title)
+
+        # "VA" is FE's code for a various-artists compilation. There is no
+        # artist to match on, so the title carries the match alone, and it must
+        # be exact: without the artist check the looser prefix rule would let
+        # unrelated records through.
+        if normalize_artist(artist) == "various artists":
+            want = fold(clean_title)
+            for result in self._search(clean_title):
+                if want and fold(result.get("collectionName", "")) == want:
+                    url = _strip_tracking(result.get("collectionViewUrl", ""))
+                    if url:
+                        return AppleMatch(
+                            url=url,
+                            artist=result.get("artistName", ""),
+                            album=result.get("collectionName", ""),
+                            genre=result.get("primaryGenreName", ""),
+                        )
+            return None
+        for variant in artist_variants(artist):
+            for result in self._search(f"{variant} {clean_title}".strip()):
+                if _is_match(artist, title, result):
+                    url = _strip_tracking(result.get("collectionViewUrl", ""))
+                    if url:
+                        return AppleMatch(
+                            url=url,
+                            # Apple's spelling is properly cased and ordered,
+                            # so it is the better name to display.
+                            artist=result.get("artistName", ""),
+                            album=result.get("collectionName", ""),
+                            genre=result.get("primaryGenreName", ""),
+                        )
         return None

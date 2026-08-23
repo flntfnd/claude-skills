@@ -134,7 +134,10 @@ def cmd_enrich(args: argparse.Namespace) -> int:
         Path(args.cache) / "apple",
         delay=args.apple_delay,
         country=args.country,
-        offline=args.offline,
+        # --offline governs reading site pages from cache; the Apple lookup is
+        # a separate service and has its own switch, or it would be silently
+        # disabled every time the crawl is served from cache.
+        offline=args.apple_offline,
     )
     stats = enrich(releases, lookup, _fetcher(args))
     write_jsonl(args.out, releases)
@@ -202,6 +205,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", default="enriched.jsonl")
     p.add_argument("--apple-delay", type=float, default=3.0)
     p.add_argument("--country", default="US")
+    p.add_argument("--apple-offline", action="store_true",
+                   help="use only cached Apple Music responses")
     p.set_defaults(func=cmd_enrich)
 
     p = sub.add_parser("resolve", help="match existing entries to catalog URLs via the sitemap")
