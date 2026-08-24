@@ -104,3 +104,82 @@ def test_various_artists_needs_an_exact_title():
     assert normalize_artist("VA") == "various artists"
     # An exact title is required for compilations; a prefix must not qualify.
     assert fold("Chebran Volume 2") != fold("Chebran Volume 2: French Boogie")
+
+
+# --- tracklist fallback ---------------------------------------------------
+# Some albums come back from the lookup endpoint as a collection carrying a
+# real trackCount but no track entities, which happens when the tracks are not
+# individually available in the storefront. Retrying the same call never helps.
+
+import json as _json
+
+from fecrawl.applemusic import AppleMusicLookup
+
+
+class _StubLookup(AppleMusicLookup):
+    """Serves canned payloads so the fallback can be exercised offline."""
+
+    def __init__(self, tmp_path, lookup_payload, song_results):
+        super().__init__(tmp_path, delay=0)
+        self._lookup_payload = lookup_payload
+        self._song_results = song_results
+        self.song_searches = 0
+
+    def _search(self, term, entity="album"):
+        if entity == "song":
+            self.song_searches += 1
+            return self._song_results
+        return []
+
+
+def _album(track_count):
+    return {"resultCount": 1, "results": [{"wrapperType": "collection", "trackCount": track_count}]}
+
+
+def _song(n, collection_id, disc=1):
+    return {
+        "wrapperType": "track",
+        "trackName": f"Track {n}",
+        "trackNumber": n,
+        "discNumber": disc,
+        "collectionId": collection_id,
+        "trackViewUrl": f"https://music.apple.com/us/album/x/{collection_id}?i={n}&uo=4",
+    }
+
+
+URL = "https://music.apple.com/us/album/zuckerzeit/1443282938"
+
+
+def _seed(lookup, payload):
+    lookup._cache_path("lookup:1443282938").write_text(_json.dumps(payload), encoding="utf-8")
+
+
+def test_falls_back_to_song_search_when_lookup_returns_no_tracks(tmp_path):
+    songs = [_song(2, 1443282938), _song(1, 1443282938)]
+    lk = _StubLookup(tmp_path, _album(10), songs)
+    _seed(lk, _album(10))
+    got = lk.tracklist(URL, "Cluster", "Zuckerzeit")
+    assert [t["trackName"] for t in got] == ["Track 1", "Track 2"]  # album order
+    assert lk.song_searches == 1
+
+
+def test_fallback_keeps_only_this_albums_tracks(tmp_path):
+    songs = [_song(1, 1443282938), _song(1, 999999), _song(2, 999999)]
+    lk = _StubLookup(tmp_path, _album(10), songs)
+    _seed(lk, _album(10))
+    assert len(lk.tracklist(URL, "Cluster", "Zuckerzeit")) == 1
+
+
+def test_no_fallback_when_lookup_already_returned_tracks(tmp_path):
+    payload = {"resultCount": 2, "results": [{"wrapperType": "collection"}, _song(1, 1443282938)]}
+    lk = _StubLookup(tmp_path, payload, [_song(9, 1443282938)])
+    _seed(lk, payload)
+    assert [t["trackName"] for t in lk.tracklist(URL, "Cluster", "Zuckerzeit")] == ["Track 1"]
+    assert lk.song_searches == 0
+
+
+def test_no_fallback_without_artist_or_title(tmp_path):
+    lk = _StubLookup(tmp_path, _album(10), [_song(1, 1443282938)])
+    _seed(lk, _album(10))
+    assert lk.tracklist(URL) == []
+    assert lk.song_searches == 0

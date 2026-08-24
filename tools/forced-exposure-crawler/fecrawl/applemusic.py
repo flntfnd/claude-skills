@@ -123,8 +123,8 @@ class AppleMusicLookup:
             time.sleep(wait)
         self._last = time.monotonic()
 
-    def _search(self, term: str) -> list[dict]:
-        cached = self._cache_path(term)
+    def _search(self, term: str, entity: str = "album") -> list[dict]:
+        cached = self._cache_path(term if entity == "album" else f"{entity}:{term}")
         if cached.exists():
             return json.loads(cached.read_text(encoding="utf-8")).get("results", [])
         if self.offline:
@@ -132,8 +132,8 @@ class AppleMusicLookup:
 
         params = {
             "term": term,
-            "entity": "album",
-            "limit": 12,
+            "entity": entity,
+            "limit": 12 if entity == "album" else 200,
             "country": self.country,
         }
         for attempt in range(4):
@@ -154,7 +154,7 @@ class AppleMusicLookup:
             time.sleep(min(2**attempt, 16) + random.uniform(0, 1))
         return []
 
-    def tracklist(self, album_url: str) -> list[dict]:
+    def tracklist(self, album_url: str, artist: str = "", title: str = "") -> list[dict]:
         """Tracks of an album, given its Apple Music URL.
 
         The album id is the trailing path component of the URL; the lookup
@@ -185,9 +185,25 @@ class AppleMusicLookup:
                 log.warning("iTunes tracklist error for %s: %s", album_id, exc)
                 return []
 
-        return [
+        tracks = [
             r for r in payload.get("results", []) if r.get("wrapperType") == "track"
         ]
+        if tracks or not (artist or title):
+            return tracks
+
+        # Some albums come back from the lookup endpoint as a collection with a
+        # real trackCount but no track entities, which happens when the tracks
+        # are not individually available in this storefront. Searching the song
+        # entity and keeping only this album's tracks recovers them.
+        wanted = str(album_id)
+        found = [
+            r
+            for r in self._search(f"{artist} {title}".strip(), entity="song")
+            if str(r.get("collectionId")) == wanted
+        ]
+        return sorted(
+            found, key=lambda t: (t.get("discNumber") or 1, t.get("trackNumber") or 1)
+        )
 
     def find(self, artist: str, title: str) -> AppleMatch | None:
         clean_title = strip_format_suffixes(title)

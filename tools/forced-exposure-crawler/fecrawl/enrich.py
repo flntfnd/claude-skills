@@ -54,7 +54,7 @@ def enrich(
                 except Exception as exc:  # cached page missing or unreadable
                     log.debug("no description for %s: %s", release.url, exc)
 
-            picked, source = select_tracks(candidates, lookup.tracklist(match.url))
+            picked, source = select_tracks(candidates, lookup.tracklist(match.url, release.artist, release.title))
             release.track_source = source
             release.tracks = [
                 {"name": t.get("trackName", ""), "url": _track_url(t)} for t in picked
