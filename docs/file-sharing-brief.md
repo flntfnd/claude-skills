@@ -1,10 +1,10 @@
 # Quick file sharing app: product and architecture brief
 
-Status: brainstorm, v0.2 (September 2026). Nothing here is built yet.
+Status: brainstorm, v0.3 (September 2026). Nothing here is built yet.
 
 ## Thesis
 
-One drop, one link. The product is not a drive. There is no folder tree to maintain, no sync client, no "my files" that grows forever. Every interaction starts with a file or folder on the sender's machine and ends with a link that dies on its own.
+One drop, one link. Sharing is the product. Every interaction starts with a file or folder and ends with a link that dies on a schedule the sender chose. The free product has no folder tree to maintain, no sync client, no "my files" that grows forever. A paid plan adds a persistent, end-to-end encrypted drive, and it exists for one reason: so that sharing something you already keep is instant. It does not turn the product into Dropbox; there is still no sync client and no collaboration layer.
 
 Dropbox and OneDrive optimize for *keeping*. WeTransfer, Smash, Wormhole, and SwissTransfer optimize for *sending*, but each gives up something: folder structure gets flattened into a zip, encryption is either absent or all-or-nothing, expiry is a footnote, and revocation usually needs a paid plan. This app treats the send itself as the whole product and gets the four things they compromise on right.
 
@@ -13,14 +13,16 @@ Security and anonymity are the product, not features of it. The sender chooses o
 ## What makes it different
 
 1. **Folder-native.** Drag a folder in and the recipient sees the folder, browsable, with per-file download or a one-click bundle. Structure survives. Nobody zips first.
-2. **Expiry and revocation are the default, not a setting.** Every drop has a lifetime (default 7 days) and a kill switch. The sender sees views and downloads as they happen and can end the drop with one tap.
+2. **Expiry and revocation are the default, and the sender controls both.** Every drop has a lifetime the sender picks from presets or sets exactly, a download cap, and a kill switch. Both can be changed after the link is out. The sender sees views and downloads as they happen and can end the drop with one tap.
 3. **End-to-end encryption always.** Every drop, on either transport, is encrypted in the browser with a key that lives only in the URL fragment. No server ever sees plaintext bytes or filenames. There is no unencrypted mode. Server-side previews, scanning, and bundling are simply not offered; the client does what the server can't see.
 4. **Two transports, chosen per drop.** *Peer-to-peer* never stores bytes anywhere: the file streams from the sender's browser to the recipient's while both tabs are open, relayed so neither side learns the other's IP. *Cloud* stores ciphertext for a bounded lifetime so the recipient can collect it later. Same link format, same encryption, same expiry rules.
 5. **No account to receive. Optional account to manage.** Recipients never sign up. Senders can share anonymously; signing in later claims the drops they already made.
 6. **Resumable on both transports.** Multi-gigabyte drops resume after a dropped connection whether streaming peer-to-peer or uploading to cloud. Bytes never pass through the web server.
 7. **Request mode.** A reverse link where other people upload into a drop that only the requester can open. Same expiry and encryption rules.
 
-Deliberately out of scope: sync clients, file editing, comments, version history, team folders, and anything that turns this into a drive.
+8. **A persistent drive on the paid plan.** Same encryption, same primitives. Files kept in the drive share out as drops without re-uploading, with their own expiry.
+
+Deliberately out of scope on every plan: sync clients, file editing, comments, version history, team folders, and collaboration.
 
 ## Primary flows
 
@@ -35,6 +37,7 @@ Deliberately out of scope: sync clients, file editing, comments, version history
 │  Transport  (●) Peer-to-peer   ( ) Cloud              │
 │             sender stays online · nothing stored      │
 │  Expires   [while tab open ▾]  Downloads  [1 ▾]      │
+│            1h · 1d · 7d · 30d · custom · never (paid) │
 │  Password  [off]                                      │
 │                                                       │
 │  ▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░  2.1 GB of 3.4 GB  resumable   │
@@ -99,16 +102,17 @@ Landing, sender UI, recipient page, dashboard. Anon key only, RLS enforced. Serv
 - **Postgres.** Source of truth for drops, files, and access events. RLS on every table.
 - **Storage.** One private bucket. Uploads go browser to Storage directly over TUS (resumable, 6 MB chunks). Object paths are `{drop_id}/{file_id}`; a storage policy allows inserts only where the drop is owned by `auth.uid()` and still in `uploading` state. Downloads use short-lived signed URLs minted by Railway. Storage caps: 50 MB per file on the free plan, configurable up to 500 GB on Pro, 50 GB per file over resumable uploads.
 - **Realtime.** Sender dashboard subscribes to its own drops' event rows for live view and download counts. Low frequency, fits the WAL model.
-- **Edge Functions.** A DB trigger side effect when a drop is sealed or revoked (notify the sender's open dashboard, schedule the sweep). Nothing heavy.
+- **Edge Functions.** The Stripe webhook receiver (signature check, write the subscription row), and a DB trigger side effect when a drop is sealed or revoked. Nothing heavy.
 
 ### Railway (TypeScript/Node, or Rust if the bundler gets hot)
 
-Verifies Supabase JWTs against the project JWKS. Holds `service_role`. Four responsibilities:
+Verifies Supabase JWTs against the project JWKS. Holds `service_role`. Five responsibilities:
 
 1. **Download authorization.** `POST /drops/:slug/download` checks status, expiry, download cap, and the password verifier (constant-time), records the event, and returns a 60 second signed URL for ciphertext.
 2. **TURN credentials.** `POST /drops/:slug/turn` mints short-TTL Cloudflare TURN credentials scoped to one P2P session, so the long-term TURN key never leaves Railway.
 3. **Expiry sweeper.** Railway cron, every 15 minutes: mark expired drops, delete their objects, keep a tombstone row so the link returns a clean "this drop has ended" instead of a 404.
-4. **Rate limiting and abuse.** Fingerprint-based limits with daily key rotation, and the revoke-on-report path. There is no scanning or thumbnail job because Railway only ever sees ciphertext; folder bundling happens client-side for the same reason.
+4. **Plan enforcement.** Expiry ceilings, per-drop size limits, and drive quota are checked here at creation and upload-authorization time, reading the `subscriptions` row. The client never decides an entitlement.
+5. **Rate limiting and abuse.** Fingerprint-based limits with daily key rotation, and the revoke-on-report path. There is no scanning or thumbnail job because Railway only ever sees ciphertext; folder bundling happens client-side for the same reason.
 
 ### Data model (first cut)
 
@@ -120,8 +124,14 @@ drops           id, owner_id, slug, transport (p2p|cloud), kind (file|folder),
                 size_bytes (rounded), file_count, created_at, sealed_at
 drop_files      id, drop_id, storage_key (cloud only), size_bytes (rounded),
                 encrypted_meta (bytea: name, path, mime, exact size, tree hash)
-drop_events     id, drop_id, kind (view|download|revoke|expire), created_at,
+drop_events     id, drop_id, kind (view|download|revoke|expire|extend), created_at,
                 country (coarse, optional)
+drop_manage     drop_id, secret_hash              (anonymous senders' management link)
+subscriptions   user_id, stripe_customer_id, plan, status, current_period_end
+drive_nodes     id, owner_id, parent_id, kind (file|folder), storage_key,
+                size_bytes (rounded), encrypted_meta, wrapped_content_key
+account_keys    user_id, wrapped_root_key_recovery, wrapped_root_key_prf,
+                wrapped_root_key_password, prf_credential_id
 ```
 
 No IP addresses, no user agents, no per-recipient identity anywhere. The privacy rules in CLAUDE.md apply to the event log too: counts and coarse geography only.
@@ -137,6 +147,36 @@ Recipients hit the drop page with no session. Instead of opening the `drops` tab
 - Password protection layers on top: the password derives a second key (argon2id in a worker) that wraps the fragment key, so the server holds a verifier only and a password is never compared server-side in plaintext.
 - Optional out-of-band key delivery: the sender can strip the key from the link and show it separately as a short word sequence, so the link and the key travel through different channels.
 - Integrity: each chunk carries its GCM tag; the manifest carries a BLAKE3 tree hash per file so a truncated or tampered transfer fails loudly.
+
+## Expiry settings
+
+Expiry is a per-drop decision with sane defaults, never a hidden constant.
+
+- **Presets.** 1 hour, 1 day, 7 days, 30 days. Plus "while my tab is open" on peer-to-peer, and "never" on the paid plan for drive items.
+- **Custom.** Any duration, or an exact date and time in the sender's zone. Stored as an absolute timestamp so the recipient's countdown is honest.
+- **Second axis.** Download cap (1, a number, unlimited) is independent of time. A drop ends on whichever comes first.
+- **Editable after the fact.** Extend, shorten, or end a live drop. Signed-in senders do it from the dashboard. Anonymous senders get a separate management link at creation time, with its own secret, so the share link never carries management rights.
+- **Visible to the recipient.** The countdown and the remaining download count are on the recipient page. No surprise 404s.
+- **Ceilings by plan.** Free drops max out at 7 days. Paid drops go to 1 year, and drive items can be permanent. Ceilings are configuration on Railway, enforced there and in RLS, and the client dropdown is only a reflection of them.
+- **Sweeper contract.** Expired ciphertext is deleted within 15 minutes of expiry. A tombstone row keeps the link's "this drop has ended" page honest.
+
+## Plans
+
+One free tier, one paid tier. Numbers below are opening proposals, held in one config file, not spread through the code.
+
+| | Free | Paid |
+| --- | --- | --- |
+| Peer-to-peer drops | Yes | Yes, higher relay quota |
+| Cloud drops | Up to 5 GB each, 7 day ceiling | Up to 50 GB each, 1 year ceiling |
+| Download caps, passwords, revoke | Yes | Yes |
+| Persistent drive | No | Yes, quota to be set (1 TB proposed) |
+| Permanent share links | No | From drive items only |
+| Request mode | Yes | Yes, larger inbound limit |
+| Account required | No | Yes, but only an email or a passkey |
+
+**Billing.** Stripe Checkout and Customer Portal. The webhook lands on a Supabase Edge Function that verifies the signature and writes a `subscriptions` row: Stripe customer id, plan, status, period end. That is the whole record. Name, address, and card never enter the app's database. Entitlements are enforced by RLS (a plan column joined on `auth.uid()`) and by Railway for expiry ceilings and quotas.
+
+**Anonymity and paying.** Paying reveals identity to Stripe, not to the app's data model, and the UI says so. Anonymous use stays fully featured on the free tier. A privacy-preserving payment path (prepaid codes bought elsewhere, or a crypto processor) is an open decision, not a launch requirement.
 
 ## Transports
 
@@ -172,6 +212,16 @@ Transport is WebRTC data channels. Signaling runs over Supabase Realtime Broadca
 
 Exactly the Supabase Storage path described above: TUS resumable upload of ciphertext direct from the browser, Railway mints short-lived signed download URLs after checking status, expiry, cap, and password verifier. Because bytes are always ciphertext, Storage, Railway, and Vercel are all untrusted for confidentiality; they are trusted only for availability and for enforcing expiry and caps.
 
+### Drive (paid)
+
+The drive is a persistent, owner-only, end-to-end encrypted tree built from the same primitives as a cloud drop.
+
+- **Objects.** Every file is an encrypted object in Storage with its own random content key. Folders are encrypted manifests. The server holds ciphertext, rounded sizes, and a count.
+- **Key hierarchy.** An account root key, generated client-side and never sent anywhere, wraps every content key. Wrapped keys live in Postgres next to the object rows. Sharing a drive file creates a drop whose drop key wraps the same content keys, so nothing is re-uploaded and revoking the drop never touches the drive copy.
+- **Root key custody.** Activating the drive generates a recovery key shown exactly once, which the user must confirm they saved. On top of that, the root key is wrapped by a passkey-derived secret via the WebAuthn PRF extension where the platform supports it (Android broadly, Safari 18+ with iCloud passkeys, Chromium with platform authenticators), and by an argon2id password-derived key elsewhere. PRF is an enhancement, never the only wrap. Losing every wrap means the data is gone, and the UI says that in plain words at activation.
+- **Not a sync client.** Web and the Apple app. No background folder sync, no conflict resolution, no version history. Upload, organize, share, delete.
+- **Quota.** Enforced in Railway at upload authorization time and reflected in RLS. Rounded sizes are what the quota counts, which slightly favors the user.
+
 ## Threat model
 
 What each party can learn, and what the app promises about it. "Sees" means the party is in a position to observe it; "records" means the app writes it down. The gap between the two is the honest part.
@@ -182,10 +232,12 @@ What each party can learn, and what the app promises about it. "Sees" means the 
 | Sender | Number of recipients, progress per recipient | | Recipient IPs (relayed P2P, cloud), recipient identity |
 | App operators (Vercel, Railway, Supabase) | Ciphertext sizes, file count, timing, drop lifetime, request IPs at the infrastructure layer | Drop rows, rounded sizes, counts, event kinds, coarse country | Plaintext, file names, passwords, the key |
 | Cloudflare TURN | Relayed ciphertext volume, both peers' IPs | | Plaintext, file names, which drop a relay session belongs to |
-| Someone with only the link | Whether the drop still exists | | Anything without the fragment key |
+| Stripe (paid users only) | Name, card, billing address, that the person pays for this app | Customer id, plan, status, period end | Anything about drops or drive contents |
+| Someone with only the link | Whether the drop still exists, its remaining lifetime | | Anything without the fragment key |
+| Someone with the management link | Can extend, shorten, or end the drop | | The content, without the fragment key |
 | Someone with link + key | Everything the recipient can | | Who else downloaded |
 
-**Promises the app makes.** No plaintext leaves the browser. No account is required to send or receive. No IP address, user agent, or per-recipient identity is ever written to the database or application logs. Keys never touch a server. Expired data is deleted, not retained.
+**Promises the app makes.** No plaintext leaves the browser. No account is required to send or receive on the free tier. No IP address, user agent, or per-recipient identity is ever written to the database or application logs. Keys never touch a server, including the drive root key. Expired data is deleted, not retained. The paid tier's billing record is the smallest one Stripe allows.
 
 **Promises the app does not make, said out loud in the UI.** Infrastructure providers can see connection metadata at the network layer; the app cannot prevent that and does not claim to. A recipient can keep and re-share what they decrypt. A password does not protect against a recipient who already has the key. Peer-to-peer mode does not work under Tor Browser and is not recommended when the user's own network is the concern; cloud mode over Tor is.
 
@@ -200,8 +252,11 @@ What each party can learn, and what the app promises about it. "Sees" means the 
 | 0 | Threat model signed off, Figma design (sender, recipient, dashboard, light and dark), schema and RLS written and tested, streaming encrypt/decrypt library with tests | RLS, JWT, and crypto paths have tests; a 10 GB file encrypts and decrypts with flat memory in Chromium and Safari |
 | 1 | Peer-to-peer send: file or folder, relay-only WebRTC, Realtime signaling, resume, multi-recipient | A 10 GB folder round-trips between two browsers on different networks with neither IP visible to the other |
 | 2 | Cloud send: TUS ciphertext upload, signed download, expiry, sweeper, password | Same folder round-trips over cloud on a flaky connection; expired drops are gone |
-| 3 | Accounts, dashboard, revoke, download caps, Realtime counts, request mode, direct-connection opt-in | Signed-in sender can manage and kill drops on both transports |
+| 3 | Accounts, dashboard, revoke, custom expiry and editing, management links, download caps, Realtime counts, request mode, direct-connection opt-in | Signed-in and anonymous senders can manage and kill drops on both transports |
 | 4 | Apple share extension and menu bar app (SwiftUI, iOS/macOS 26) | Drop from Finder or the share sheet without opening a browser |
+| 5 | Paid plan: Stripe, entitlements, the drive with its key hierarchy and recovery flow, share-from-drive | A paying user keeps a file permanently, shares it with a 1 year link, revokes it, and the drive copy is untouched |
+
+Phases 4 and 5 are independent and can swap order. The Apple app should ship drive support if 5 lands first.
 
 P2P ships before cloud because it has no storage, no retention, and no sweeper: it is the smaller trust surface and the harder engineering, so it validates the crypto and UX first.
 
@@ -222,6 +277,8 @@ Contracts between lanes (table shapes, the Railway API surface, storage key layo
 2. **Where the code lives.** Assumed: a new repository, not this skills repo.
 3. **Name.** Not chosen. Candidates should be short, verb-like, and not collide with the incumbents.
 4. **Visual direction.** Default is the web platform's own conventions per CLAUDE.md. If a `visual-styles` style is wanted, it needs to be named before Figma work starts.
+5. **Plan numbers.** The ceilings and quotas in the Plans table are placeholders until storage and relay costs are modeled against a price.
+6. **Privacy-preserving payment.** Whether to offer a path that keeps identity away from Stripe (prepaid codes, a crypto processor), and when.
 
 ## Sources
 
@@ -234,4 +291,6 @@ Contracts between lanes (table shapes, the Railway API surface, storage key layo
 - Cloudflare TURN credentials and pricing: https://developers.cloudflare.com/realtime/turn/
 - Railway inbound UDP limitation: https://station.railway.com/questions/adding-inbound-udp-fad19847
 - Supabase Realtime Broadcast authorization: https://supabase.com/blog/supabase-realtime-broadcast-and-presence-authorization
+- WebAuthn PRF for end-to-end encryption, 2026 support status: https://www.corbado.com/blog/passkeys-prf-webauthn
+- Stripe with Next.js 16 and Supabase: https://www.buildmvpfast.com/blog/stripe-subscriptions-nextjs-16-server-actions-setup-guide-2026
 - Competitive landscape: https://blog.bytesizedsecurity.show/2026/07/09/wetransfer-alternatives-2026-privacy-first/
