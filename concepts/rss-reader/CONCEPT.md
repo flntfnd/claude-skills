@@ -36,17 +36,189 @@ That's the product.
 **Principles, in priority order:**
 
 1. **Native on every platform.** SwiftUI on Apple, Jetpack Compose on Android, Next.js on the web. Each app looks like the platform owner made it. Shared design tokens and information architecture, platform-specific chrome and behavior. No shared UI runtime.
-2. **Own the sync layer, keep it open.** Server-side fetching, one fetch per feed for every subscriber, delta sync to clients. Expose the Google Reader API dialect so NetNewsWire, Reeder Classic, Unread, Lire, and every self-hosted-compatible client work on day one. The lock-in is that it's good, not that it's closed.
-3. **Reading is the feature.** Full-text extraction, real typography, read position that follows you, offline by default. The reader pane is where the design budget goes.
-4. **Triage without an algorithm.** No engagement ranking, ever. Deterministic tools instead: rules, mutes, volume caps, priority lanes, digest grouping. The user can always explain why an item is where it is.
-5. **AI is opt-in, bring-your-own or on-device, and never the default.** Summaries and translation through the user's own API key or the platform's on-device model. Nothing leaves the device or account without the user turning it on. Nothing is used for training.
-6. **Everything is a feed.** RSS, Atom, JSON Feed, newsletters via a private ingest address, YouTube channels, podcasts, Bluesky and Mastodon accounts, Reddit, and generated feeds for sites that don't publish one.
-7. **Leave whenever you want.** OPML in and out, full JSON export of state, importers from Feedly, Inoreader, Feedbin, and NetNewsWire, and the API is free for any client.
-8. **No tracking.** No analytics SDKs, no fingerprinting, no reading-behavior telemetry. Fetching happens server-side so publishers see one crawler, not each reader's IP. Images go through a referrer-stripping proxy.
+2. **The account is optional.** Two modes, chosen on first launch, switchable later without loss. Local mode keeps everything on the device and syncs through iCloud, no account at all. Account mode signs in with Google or Apple and moves fetching to the server, which is what unlocks the web app, newsletters, and third-party clients. Section 3 is the whole design.
+3. **Own the sync layer, keep it open.** In account mode: server-side fetching, one fetch per feed for every subscriber, delta sync to clients. Expose the Google Reader API dialect so NetNewsWire, Reeder Classic, Unread, Lire, and every self-hosted-compatible client work on day one. The lock-in is that it's good, not that it's closed.
+4. **Reading is the feature.** Full-text extraction, real typography, read position that follows you, offline by default. The reader pane is where the design budget goes.
+5. **Triage without an algorithm.** No engagement ranking, ever. Deterministic tools instead: rules, mutes, volume caps, priority lanes, digest grouping. The user can always explain why an item is where it is.
+6. **AI is opt-in, bring-your-own or on-device, and never the default.** Summaries and translation through the user's own API key or the platform's on-device model. Nothing leaves the device or account without the user turning it on. Nothing is used for training.
+7. **Everything is a feed.** RSS, Atom, JSON Feed, newsletters via a private ingest address, YouTube channels, podcasts, Bluesky and Mastodon accounts, Reddit, and generated feeds for sites that don't publish one.
+8. **If it's in the app, it's in the export.** Every byte of user data round-trips through one open archive format: OPML, JSON Feed, Markdown, and JSON. Importers for every reader people are leaving. Round-trip is an integration test, not a promise. Section 4 is the spec.
+9. **No tracking.** No analytics SDKs, no fingerprinting, no reading-behavior telemetry. Fetching happens server-side so publishers see one crawler, not each reader's IP. Images go through a referrer-stripping proxy.
 
 ---
 
-## 3. Information architecture
+## 3. Where your data lives
+
+The first screen after install asks one question. The answer can change later and nothing is lost either way.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│   Where should Tributary keep your feeds?                        │
+│                                                                  │
+│   ┌──────────────────────────┐   ┌──────────────────────────┐    │
+│   │  On this device          │   │  Tributary account       │    │
+│   │                          │   │                          │    │
+│   │  No account. Feeds are   │   │  Sign in with Google or  │    │
+│   │  fetched here and stored │   │  Apple. Feeds are        │    │
+│   │  here. Synced between    │   │  fetched by the service  │    │
+│   │  your Apple devices      │   │  and synced everywhere,  │    │
+│   │  through iCloud.         │   │  including the web.      │    │
+│   │                          │   │  Adds newsletters,       │    │
+│   │  Free, no limits.        │   │  generated feeds, and    │    │
+│   │                          │   │  other reader apps.      │    │
+│   └──────────────────────────┘   └──────────────────────────┘    │
+│                                                                  │
+│   You can switch later. Everything moves with you.               │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+| | Local mode | Account mode |
+| --- | --- | --- |
+| Identity | None. No email, no sign-up. | Google, Apple, or passkey through Supabase Auth. No passwords. |
+| Fetching | On the device, using the shared Rust core. | On Railway, once per feed for every subscriber. |
+| Storage | SwiftData on Apple, Room on Android. | Postgres on Supabase, with the same on-device store as an offline cache. |
+| Sync | iCloud on Apple devices. Google Drive app data on Android. The two don't cross. | The service. Every platform, including web. |
+| Backup you can read | A continuously maintained archive folder in iCloud Drive (or a chosen folder on Android). | Scheduled archive export to iCloud Drive, Google Drive, or download. |
+| Platforms | iOS, iPadOS, macOS, Android. | All of those plus web. |
+| Newsletters, generated feeds | No. Both need a server. | Yes. |
+| Third-party clients | No. There's no endpoint. | Yes, Google Reader API. |
+| Search | On-device, everything cached. | Server-side, everything ever received. |
+| Refresh timing | When the OS allows background work. Less timely; the OS decides. | Continuous, with push for WebSub feeds. |
+| Publisher sees | Your device's IP, once per feed per refresh. | One crawler. |
+| AI | On-device and bring-your-own-key. | Those plus hosted. |
+| Price | Free, no feed limit. There's no server cost to recover. | Free tier and paid tier, section 12. |
+
+### Local mode
+
+The user's words for this are "local only" and "iCloud Drive". Under the hood that's two different iCloud mechanisms doing two different jobs, and the split matters.
+
+**Live state syncs through CloudKit**, the private database, via SwiftData's CloudKit integration. It shows up to the user as "iCloud" in Settings, exactly like Notes or NetNewsWire's iCloud account. CloudKit merges per record. Two devices marking different items read at the same time both win.
+
+**iCloud Drive holds the archive, not the database.** A `Tributary` folder in iCloud Drive that the app keeps current with the full export format from section 4: OPML, JSON Feed, Markdown, JSON. Visible in Finder and Files, readable without the app, and the thing you'd grab if the app disappeared tomorrow. It is never read back by the app on its own; it is written to.
+
+Why not sync the database itself through iCloud Drive: iCloud Drive doesn't merge, it forks. Two devices writing the same file produces two files. Putting a live SQLite store in a ubiquity container is how readers corrupt their stores, and it's the reason every serious Apple app that says "iCloud sync" means CloudKit. The user gets what they asked for, a local-only reader whose data lives in iCloud Drive as their own files, without the failure mode.
+
+**Android local mode** has no CloudKit. Sync goes through the Google Drive app-data folder as a change journal plus periodic snapshot: coarser than CloudKit, good enough for read state and subscriptions across a phone and a tablet. The archive mirror writes to a user-chosen folder through the Storage Access Framework, which can itself be a Drive folder. Local mode on Android is decision 8 in section 11; shipping it without cross-device sync in the first release is a legitimate option.
+
+**Fetching on the device** uses the same Rust core the server uses (section 9), so a feed parses identically in both modes. Background refresh is `BGAppRefreshTask` on iOS and iPadOS, a timer while the app is running on macOS, and `WorkManager` periodic work on Android with its 15-minute floor. Full-text extraction runs on-device through the same core. There's no image proxy, so images load direct; the mode picker says so.
+
+**Web is account-only.** A browser can't fetch arbitrary feeds cross-origin, so there is nothing for local mode to run on. The web app is the account mode's fifth client, not a sixth mode.
+
+### Account mode
+
+Supabase Auth with three providers and no password option:
+
+- **Google.** Credential Manager on Android, the Supabase OAuth flow through `ASWebAuthenticationSession` on Apple, standard OAuth on web.
+- **Apple.** Required by App Store guideline 4.8 the moment Google is offered on iOS or macOS. Offered on Android and web too, so an account created on an iPhone works everywhere.
+- **Passkey.** For people who want neither. Email magic link as the recovery path.
+
+Everything in section 9's architecture is account mode. Local mode never touches Railway or Supabase.
+
+### Switching
+
+The archive format is the bridge, in both directions.
+
+```
+Local ──▶ Account     Sign in. The app writes a full archive, uploads it,
+                      the service adopts each feed by canonical URL and
+                      replays state. The on-device store is re-pointed at
+                      the service and becomes the offline cache. CloudKit
+                      records are left in place until the user clears them
+                      from Settings, so a second device can still finish
+                      its own migration.
+
+Account ──▶ Local     The app downloads the full archive, seeds the local
+                      store from it, and turns on CloudKit. Then it offers
+                      account deletion on the same screen. Deletion is
+                      immediate and complete on the server side. The
+                      archive the user was just handed is the copy.
+```
+
+Mode is a per-device choice. Apple devices in local mode sync with each other through iCloud; devices signed into an account sync through the service. A Mac in local mode and a phone on an account don't sync, and the app says so rather than pretending.
+
+---
+
+## 4. Import and export
+
+If it's in the app, it's in the export. Every export is a full copy, every import is idempotent, and export-wipe-import producing identical state is an integration test that runs in CI against every client.
+
+### The archive
+
+One format, used for manual exports, scheduled backups, the iCloud Drive mirror in local mode, and mode switching. A folder in the mirror, a zip everywhere else.
+
+```
+Tributary Export 2026-09-07/
+├── manifest.json            format version, app version, mode, created_at, counts
+├── subscriptions.opml       OPML 2.0. Folders as nested outlines. Lane, muted,
+│                            custom title, and per-feed reader preference as
+│                            attributes in a tributary: namespace, ignored by
+│                            every other reader and round-tripped by this one.
+├── rules.json               every rule, match and action
+├── settings.json            typography, theme, density, keyboard, notification prefs
+├── state/
+│   └── items.jsonl          one line per item you have state on:
+│                            { feed_url, guid, url, read, saved, read_position,
+│                              updated_at }
+├── saved/
+│   └── <feed-slug>/
+│       ├── feed.json        JSON Feed 1.1 holding every saved item from that
+│       │                    feed with its extracted content
+│       └── <item-slug>.html the extracted article as a self-contained page,
+│                            images inlined, so it opens in any browser
+├── highlights/
+│   ├── highlights.json      { feed_url, guid, quote, note, position, created_at }
+│   └── <source>.md          one Markdown file per source, in the shape Obsidian
+│                            and Readwise already accept
+└── newsletters/             account mode only
+    └── senders.json         sender, ingest address, folder
+```
+
+**Item identity is (canonical feed URL, guid), with the item URL as fallback.** That's the same key the Google Reader API uses, so read and saved state survives not just a move between modes but a move to a different reader entirely.
+
+**Why these formats.** OPML because every reader in existence imports it. JSON Feed because it's the standard for items and it makes the saved folder something you can point any reader at and subscribe to. Markdown for highlights because that's what note apps eat. JSON only for what has no standard: rules, settings, per-item state.
+
+### Export
+
+- **Anytime, from Settings.** Share sheet and Files on Apple, Storage Access Framework on Android, download on web. Full archive or a partial one: OPML only, saved only, highlights only.
+- **Scheduled.** Weekly by default in account mode, to iCloud Drive, Google Drive, or a chosen folder. Local mode doesn't need this; the mirror is continuous.
+- **Before anything destructive.** Switching mode, deleting the account, or dropping to the free tier with more feeds than it allows: the app writes the archive first and shows where it put it.
+- **Account deletion hands you the archive first.** The delete button is disabled until the export has completed or the user explicitly declines it.
+- **The Reader API is an export.** In account mode any compatible client can pull full state at any time. No special path needed.
+
+### Import
+
+| Source | What comes across | How |
+| --- | --- | --- |
+| Tributary archive | Everything | Pick the folder or zip. |
+| Any OPML | Feeds and folders | Every reader exports one. |
+| Feedly | Feeds, folders, Read Later, read state | OPML upload, plus a one-time Feedly sign-in for saved and read state through their API. The token is used once and discarded. |
+| Inoreader | Feeds, folders, tags, starred | OPML plus their JSON export. |
+| Feedbin | Feeds, tags, starred, read state | Their API, one-time. |
+| NetNewsWire | Feeds and folders | OPML. Read and starred state lives in its iCloud account and isn't exportable, and the importer says so up front rather than implying it came across. |
+| Miniflux, FreshRSS, any Google Reader API server | Feeds, folders, starred, read state | Reader API pull with the user's credentials for that server. |
+| Instapaper, Readwise Reader, Pocket export | Saved articles | Their CSV or JSON, imported as saved items and re-extracted. |
+| Readwise | Highlights | Their export, matched to items by URL. |
+
+Import behaviors that hold for every source:
+
+- **Preview before commit.** "412 feeds in 14 folders, 88 saved, 1,203 highlights. 31 feeds are already subscribed and will be skipped." Then a single confirm.
+- **Dedupe by canonical URL.** Feed URLs are normalized before comparison (scheme, trailing slash, tracking parameters, known redirect hosts).
+- **State merges by max.** Read beats unread, saved beats unsaved, the later read position wins. An import never un-reads anything.
+- **Resumable and idempotent.** Running the same import twice produces the same result as running it once. A failed import halfway through can be re-run.
+- **Same code in both modes.** The importer lives in the Rust core, so local mode and account mode import identically, and the server-side importer for account mode is the same crate.
+
+### Testing
+
+Three test classes, all integration, all in CI:
+
+1. **Round-trip.** Seed a client with a fixture state, export, wipe, import, diff. Any difference fails the build.
+2. **Cross-mode.** Export from a local-mode fixture, import into an account-mode fixture, and back. Diff.
+3. **Competitor fixtures.** Real OPML and export files from each source in the table, kept as fixtures, with expected results. When Feedly changes its export shape, the test says so before a user does.
+
+---
+
+## 5. Information architecture
 
 Five top-level destinations, identical across platforms, surfaced through each platform's own navigation pattern.
 
@@ -79,7 +251,7 @@ Rules run server-side on ingest and can: move to a lane, mute (never show), star
 
 ---
 
-## 4. Screen concepts
+## 6. Screen concepts
 
 ### macOS and iPadOS: three panes
 
@@ -110,7 +282,7 @@ Rules run server-side on ingest and can: move to a lane, mute (never show), star
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Sidebar and toolbar are the navigation layer and take the glass treatment. The list and the reader are content and take none. Reader pane typography is the one place where the app departs from system defaults, and that departure is a Figma decision, not something to fill in during implementation (see section 9).
+Sidebar and toolbar are the navigation layer and take the glass treatment. The list and the reader are content and take none. Reader pane typography is the one place where the app departs from system defaults, and that departure is a Figma decision, not something to fill in during implementation (see section 11).
 
 ### iPhone
 
@@ -207,7 +379,7 @@ Next.js App Router, Server Components for the shell, a Client Component island f
 
 ---
 
-## 5. Reading experience
+## 7. Reading experience
 
 This is where the product wins or loses. Specifics:
 
@@ -222,7 +394,7 @@ This is where the product wins or loses. Specifics:
 
 ---
 
-## 6. Sources
+## 8. Sources
 
 "Everything is a feed" is implemented as adapters on the fetch service. Each produces normalized items.
 
@@ -243,9 +415,9 @@ Feed health is visible in the Feeds tab: last successful fetch, error state, pos
 
 ---
 
-## 7. Architecture
+## 9. Architecture
 
-Follows the repo's lane rules exactly. Vercel is the web frontend, Railway is the trusted backend, Supabase is data, auth, realtime, and storage.
+Follows the repo's lane rules exactly. Vercel is the web frontend, Railway is the trusted backend, Supabase is data, auth, realtime, and storage. Everything below the clients box is account mode. Local mode is the clients box plus the shared core, and nothing else.
 
 ```
                      ┌──────────────────────────────────────────┐
@@ -278,6 +450,25 @@ Follows the repo's lane rules exactly. Vercel is the web frontend, Railway is th
 └────────────────────────────────────┘   └──────────────────────────────────┘
 ```
 
+**The shared Rust core.** One crate, working name `tributary-core`, holds everything that has to behave identically in both modes: feed parsing (RSS, Atom, JSON Feed, the adapter normalizers), full-text extraction, the dedupe fingerprint, canonical URL normalization, the rules engine, and the archive reader and writer from section 4. The Railway fetcher and api link it directly. The Apple and Android clients embed it through UniFFI, which generates the Swift and Kotlin bindings from one interface definition. The web client gets none of it and doesn't need it: web is account-only, so the server does that work.
+
+```
+                 ┌──────────────────────┐
+                 │   tributary-core     │   Rust. Parse, extract, dedupe,
+                 │                      │   normalize, rules, archive I/O.
+                 └──┬────────┬────────┬─┘
+        native link │        │ UniFFI │ UniFFI
+                    ▼        ▼        ▼
+              Railway     SwiftUI    Compose
+              fetcher     clients    client
+              and api     (both      (both
+                          modes)     modes)
+```
+
+Cost, stated plainly: a Rust toolchain in the Xcode and Gradle builds, an XCFramework and an AAR to produce in CI, and UniFFI's interface file as one more contract to keep in sync. The alternative is three parsers (a Swift one, a Kotlin one, and the server's) that disagree about malformed feeds in three different ways, and three importers that round-trip slightly differently. Local mode makes the shared core the right call, not a nice-to-have.
+
+**Local mode on device.** The client owns a fetch scheduler that mirrors the server's (cadence-derived intervals, conditional GET, backoff) but runs inside the OS's background budget. Items, subscriptions, state, rules, and highlights live in SwiftData or Room with the same shape as the server tables below, minus `user_id`. CloudKit (Apple) or the Google Drive app-data journal (Android) carries the changes between devices. The archive mirror is written by the core after every sync.
+
 **Why the clients talk to both.** User-owned state that's small and per-user (folders, preferences, rules, highlights) goes straight to Supabase under RLS with the anon key, and Realtime on that same connection carries the "you have new items" nudge. Items are shared across every subscriber of a feed, so reading them is a fan-out join that should not be an RLS policy in the hot path. The Railway API serves item sync, search, and extraction results using `service_role`, filtering by the verified user ID explicitly in every query. That split keeps RLS simple enough to `EXPLAIN ANALYZE` and keeps the heavy queries on the trusted side of the lane.
 
 **Why Rust on Railway.** The fetcher holds thousands of concurrent connections, parses malformed XML all day, and runs readability extraction on every item. That's a throughput and memory problem, and it's the shape of work `rust-conventions` already covers (axum, sqlx, tokio discipline, thiserror/anyhow split). One language for api and fetcher means one toolchain and one deploy story. Flagging the cost honestly: Rust is slower to iterate on than TypeScript for the API surface. The recommendation is still Rust, because the API's hot path is the same delta-sync query the fetcher writes into, and splitting languages across that boundary is where bugs live.
@@ -301,6 +492,8 @@ change_log       user_id, seq (bigserial), table, row_id, op, at
 
 `change_log` is the sync cursor. Clients send their last `seq`, get everything after it. Local writes queue offline and replay with client timestamps; conflicts resolve last-writer-wins per field, which is correct for read state and acceptable for everything else in scope.
 
+Portability keys ride alongside the server IDs. `feeds.canonical_url` and `items.guid` are what the archive uses, so exporting is a projection of these tables and importing is a lookup on them. The local-mode store keeps the same columns, which is what makes the two modes interchangeable through one file format.
+
 **Fetch scheduling.** Each feed gets an interval derived from its observed posting cadence, clamped between 5 minutes and 24 hours, with exponential backoff on errors and immediate fetch on WebSub notification. Priority-lane feeds get the floor of the range. One fetch serves every subscriber. `robots.txt` and `Retry-After` are respected. The crawler identifies itself with a URL publishers can read.
 
 **Google Reader API compatibility.** The FreshRSS-documented dialect: `ClientLogin`, `token`, `subscription/list`, `stream/contents`, `stream/items/ids`, `stream/items/contents`, `edit-tag`, `mark-all-as-read`, `subscription/edit`. Those clients authenticate with username and password, so the account settings page issues app-specific passwords scoped to this endpoint and revocable individually. Third-party access is free and unmetered within the same fair-use limits first-party clients get.
@@ -311,7 +504,7 @@ change_log       user_id, seq (bigserial), table, row_id, op, at
 
 ---
 
-## 8. Optional intelligence
+## 10. Optional intelligence
 
 Off by default. Enabled per feature in settings. Three modes, chosen by the user:
 
@@ -323,7 +516,7 @@ What it does: summarize an item, summarize a folder's unread, translate, and sug
 
 ---
 
-## 9. Design system and open design decisions
+## 11. Design system and open design decisions
 
 Default visual language is native per platform, per the repo's `CLAUDE.md`. That is a deliberate choice against the flat, identical-everywhere look that Folo and Feedly ship. The shared layer is tokens and information architecture; the rendered layer is each platform's own.
 
@@ -346,15 +539,18 @@ Decisions that need a designer, not an implementer. Each one changes what gets b
 5. **Motion moments.** List row to reader (push on iOS, shared-element on Android, cross-fade on web?), mark-read feedback, Today refresh. Purpose is clear for each; parameters are not filled in here.
 6. **Empty and error states.** Inbox zero, feed error, offline, first run.
 7. **Brand.** Name, mark, accent color. Accent is the only brand color that appears in the UI.
+8. **The mode picker.** It's the first screen anyone sees and it has to make an architectural choice feel like a preference. Two cards, a comparison, or a single default with "advanced" behind it?
+9. **The mirror in Files.** How the iCloud Drive archive folder presents itself: one folder of dated snapshots, or one live folder that's always current? The concept says live; the Finder experience of that is a design call.
 
 Per the `design-tool-gates` skill, the Figma file needs the minimum screen set (Auth, Today with four states, Reader, Settings, navigation shell) in both light and dark before implementation starts.
 
 ---
 
-## 10. Business model
+## 12. Business model
 
-- **Free:** up to 100 feeds, full sync, all clients, third-party API, reader view, rules. No newsletter ingest, no feed generation, no hosted AI, 30-day search history.
-- **Paid, one tier:** unlimited feeds, newsletters, feed generation, unlimited search history, hosted AI, family sharing for up to five. Target price around $5 a month or $48 a year. Exact number is a decision.
+- **Local mode:** free, no feed limit, no account. It costs nothing to serve, so it costs nothing to use. This is also the answer to "what happens if the company goes away": the local-mode app keeps working and the archive in iCloud Drive is already the user's.
+- **Account, free:** up to 100 feeds, full sync, all clients including web, third-party API, reader view, rules. No newsletter ingest, no feed generation, no hosted AI, 30-day search history.
+- **Account, paid, one tier:** unlimited feeds, newsletters, feed generation, unlimited search history, hosted AI, family sharing for up to five. Target price around $5 a month or $48 a year. Exact number is a decision.
 - **Never:** ads, a "pro" tier that meters filters, a Teams pivot, or selling reading data.
 
 On iOS and macOS, subscriptions go through StoreKit in-app purchase. The App Store "reader app" carve-out is for apps that only display previously purchased content, and relying on it for a subscription upsell is a review risk not worth taking. Sign in with Apple is mandatory on Apple platforms because Google sign-in is offered.
@@ -363,13 +559,13 @@ The free tier is generous on purpose. Feedly and Inoreader both trained users to
 
 ---
 
-## 11. Phasing
+## 13. Phasing
 
-**Phase 0: the service and the web app.** Fetcher, api, Supabase schema, sync protocol, Reader API compatibility, OPML and competitor import, web app. Ship this first because Reader API compatibility means NetNewsWire, Reeder Classic, Unread, and Lire users can adopt the service before a single native app exists. It also proves the sync layer under real load before the native clients depend on it.
+**Phase 0: the core, the service, and the web app.** `tributary-core` first, since both the fetcher and every later client depend on it. Then fetcher, api, Supabase schema, sync protocol, Reader API compatibility, the archive format with its round-trip test, competitor importers, and the web app. Ship this first because Reader API compatibility means NetNewsWire, Reeder Classic, Unread, and Lire users can adopt the service before a single native app exists. It also proves the sync layer under real load before the native clients depend on it.
 
-**Phase 1: Apple.** iOS, iPadOS, macOS from one SwiftUI codebase with platform-specific navigation. This is the flagship reading experience and the one most likely to earn word of mouth.
+**Phase 1: Apple, both modes.** iOS, iPadOS, macOS from one SwiftUI codebase with platform-specific navigation. Local mode with CloudKit sync and the iCloud Drive mirror ships in this phase, not later, because it's the mode that needs no server and is the honest answer to people leaving Feedly who never want another account. Mode switching in both directions ships here too. This is the flagship reading experience and the one most likely to earn word of mouth.
 
-**Phase 2: Android.** Compose, M3 Expressive, adaptive layouts. Same sync client contract as Apple, ported not shared.
+**Phase 2: Android, both modes.** Compose, M3 Expressive, adaptive layouts. Same sync client contract as Apple, ported not shared. Whether Android local mode syncs across devices in this phase or ships single-device first is decision 8 below.
 
 **Phase 3: sources.** Newsletter ingest, hosted feed generation, highlights export integrations.
 
@@ -379,26 +575,29 @@ Windows is not in this plan. If it's added later it's WinUI per the repo's platf
 
 ---
 
-## 12. Proposed workstream breakdown
+## 14. Proposed workstream breakdown
 
 Independent enough to run in parallel once the schema and sync contract are frozen:
 
 | Workstream | Depends on | Skill |
 | --- | --- | --- |
-| Supabase schema, RLS policies, Auth setup | nothing | `web-platform` (supabase-integration), `backend-conventions` |
+| `tributary-core` crate: parsing, extraction, rules, archive format, UniFFI bindings | nothing | `rust-conventions` |
+| Archive format spec and round-trip test fixtures | nothing | none, it's a document plus fixtures |
+| Supabase schema, RLS policies, Auth setup (Google, Apple, passkey) | nothing | `web-platform` (supabase-integration), `backend-conventions` |
 | Sync protocol spec (change_log, delta format, conflict rules) | schema | none, it's a document |
-| Rust fetcher and extraction worker | schema | `rust-conventions`, `backend-conventions` |
+| Rust fetcher and extraction worker | core, schema | `rust-conventions`, `backend-conventions` |
 | Rust api server, Reader API compat | schema, sync spec | `rust-conventions`, `backend-conventions` |
-| Figma design system and screen set | brand decisions from section 9 | `figma-design-system`, `design-tool-gates`, `apple-platform`, `android-platform` |
+| Figma design system and screen set | brand decisions from section 11 | `figma-design-system`, `design-tool-gates`, `apple-platform`, `android-platform` |
 | Web app | api, Figma | `web-platform`, `motion-design` |
-| Apple clients | api, Figma | `apple-platform`, `motion-design` |
-| Android client | api, Figma | `android-platform`, `motion-design` |
+| Apple clients, both modes, CloudKit sync, iCloud Drive mirror | core, api, Figma | `apple-platform`, `motion-design` |
+| Android client, both modes | core, api, Figma | `android-platform`, `motion-design` |
+| Competitor importers | core, archive spec | `rust-conventions` |
 
-The critical path is schema, then sync spec, then api, then clients. The Figma work runs alongside the backend and gates the clients.
+The critical path is core and archive spec together, then schema, then sync spec, then api, then clients. The Figma work runs alongside the backend and gates the clients.
 
 ---
 
-## 13. What this concept does not decide
+## 15. What this concept does not decide
 
 - The name.
 - The exact price.
@@ -406,3 +605,6 @@ The critical path is schema, then sync spec, then api, then clients. The Figma w
 - Whether the web app gets the same offline depth as native or a lighter cache.
 - Whether highlights ship in Phase 1 or Phase 3.
 - Whether Rust holds for the api server once the surface grows, or whether it moves to TypeScript for velocity. Start in Rust; revisit with evidence.
+- Whether Android local mode gets cross-device sync through Google Drive app data in its first release, or ships single-device with the archive mirror as the only way across. Decision 8 in section 11 covers the picker; this is the engineering half.
+- Whether the local-mode Mac app runs a background helper for fetching when the app is closed, or only refreshes while open. NetNewsWire refreshes only while open and nobody complains.
+- Whether the live sync in local mode is CloudKit, as this concept recommends, or literal iCloud Drive file sync as the brief phrased it. The concept's position is that the user asked for the outcome, local-only data that lives in iCloud Drive as their own files, and CloudKit plus the mirror delivers that outcome without the corruption risk. If the requirement is literally file-based sync, the mirror becomes the sync mechanism and conflict handling becomes a design problem the app has to surface.
