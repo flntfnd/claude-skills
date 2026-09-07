@@ -157,9 +157,10 @@ Tributary Export 2026-09-07/
 ├── rules.json               every rule, match and action
 ├── settings.json            typography, theme, density, keyboard, notification prefs
 ├── state/
-│   └── items.jsonl          one line per item you have state on:
-│                            { feed_url, guid, url, read, saved, read_position,
-│                              updated_at }
+│   ├── items.jsonl          one line per item you have state on:
+│   │                        { feed_url, guid, url, read, saved, read_position,
+│   │                          snoozed_until, tags, note, updated_at }
+│   └── queues.json          Up Next and Weekend, as ordered lists of (feed_url, guid)
 ├── saved/
 │   └── <feed-slug>/
 │       ├── feed.json        JSON Feed 1.1 holding every saved item from that
@@ -224,7 +225,8 @@ Five top-level destinations, identical across platforms, surfaced through each p
 
 ```
 Today        Triage inbox. Unread, grouped by priority lane, then folder.
-             High-volume feeds collapse to a count. This is the home screen.
+             High-volume feeds collapse to a count, same stories collapse
+             to one row, snoozed items return here. This is the home screen.
 
 Timeline     Everything in chronological order. Filter: All / Unread / Saved.
              The "just show me the river" view for people who hate inboxes.
@@ -232,7 +234,8 @@ Timeline     Everything in chronological order. Filter: All / Unread / Saved.
 Feeds        The subscription tree. Folders, feeds, tags, feed health.
              Add, organize, mute, set per-feed rules here.
 
-Saved        Read-later and highlights. Full-text searchable. Exportable.
+Saved        Read-later for anything: feed items, URLs saved from any app,
+             highlights, tags. Full-text searchable. Exportable.
 
 Search       Full-text search across everything you've ever received,
              not just what's cached on device.
@@ -381,16 +384,93 @@ Next.js App Router, Server Components for the shell, a Client Component island f
 
 ## 7. Reading experience
 
-This is where the product wins or loses. Specifics:
+This is where the product wins or loses. Every reader on the market treats the feed as the unit of work: fetch it, list it, count it. The unread badge is the product. This one treats the article as the unit and the reader's attention as the constraint. The features below are organized by the moment they serve, because a feature that doesn't map to a moment in someone's day is a checkbox, not value.
 
-- **Full-text extraction** runs server-side on ingest for every item, not on demand. Truncated feeds are the norm and the reader should never show a stub with a "read more" link when the article is fetchable.
-- **Reader view is the default**, original-HTML view is one tap away, and per-feed preference is remembered.
-- **Typography controls**: type size, line width, theme (system, light, dark, sepia), and a small curated set of body faces. System font is the default on each platform.
-- **Read position sync** at paragraph granularity, not just read/unread. Open an item on the phone, keep reading on the Mac.
-- **Offline first**: every client keeps a local database (SwiftData on Apple, Room on Android, IndexedDB on web). Unread items and their extracted text are always available offline. Images cache on read.
-- **Highlights** on selected text, synced, exportable as Markdown, with an optional push to Obsidian, Notion, and Readwise. This is the Readwise Reader overlap and it stays deliberately shallow: capture, don't build a second brain.
-- **Media**: YouTube items embed the player, podcast items show a play button that hands off to the system player. No in-app podcast client.
-- **Sharing** uses the platform share sheet. Nothing custom.
+### Before you read: knowing what's worth it
+
+The most common failure in feed reading is opening the app, seeing a four-digit number, and closing it again. Everything here exists to make the first thirty seconds calm.
+
+- **Feed preview before subscribing.** Paste a URL and see the last ten items, posts per week, whether the feed carries full text or stubs, and how often it's updated. Subscribing is a decision, and today no reader gives you the information to make it. This alone would have saved most people from the feeds they later mute.
+- **Volume caps per feed.** "Show me at most 5 a day from this one." The rest are still there in the feed's own view, they just don't enter Today. This is how a high-volume site stays subscribed instead of unsubscribed.
+- **Story clustering.** When six feeds cover the same thing, Today shows one row with a "6 sources" chip that expands. Matching is deterministic: shared outbound links, near-identical titles inside a time window, the same canonical URL syndicated through two feeds. No model, no ranking, and the user can see exactly why two items were grouped. Choosing which one leads is a rule: the Priority-lane source if there is one, otherwise the earliest.
+- **Cross-feed read state.** The same URL arriving through two feeds is one item with one read state. Reading it once marks it read everywhere.
+- **Reading time and length on every row.** Derived from the extracted text, not the summary. A row says "6 min" before you tap it.
+- **"I have fifteen minutes."** A time filter on Today that shows only what fits, longest first so the fifteen minutes gets spent on one good thing rather than nine short ones. Small feature, big change to how a commute gets used.
+- **Snooze.** Hide an item until tonight, tomorrow morning, or the weekend. Snoozed items come back to the top of Today, unread. This is the missing verb between "read now" and "save forever".
+- **Up Next.** A short ordered queue the user builds by swiping. It's a playlist for articles: when one is finished, the next opens, with the total time remaining shown. Reading sessions get a shape instead of being a series of returns to the list.
+- **Weekend queue.** A rule-driven queue that collects long items automatically, off by default: "anything over 12 minutes from these folders goes to Weekend". Saturday morning opens to a curated pile rather than an inbox.
+
+### While you read: the page as it should have been
+
+Reader view is the default, and reader view has to be better than the original site, not just cleaner. Most readers stop at "strip the ads". These don't.
+
+- **Extraction that keeps structure.** Headings, lists, tables, block quotes, footnotes, figures with captions, and code blocks survive extraction with their semantics intact. Most extractors flatten these into paragraphs. The core's extractor is tested against a fixture set of real articles from technical blogs, newspapers, Substacks, and long-form magazines, and a regression on any of them fails the build.
+- **Code blocks** get syntax highlighting, horizontal scroll rather than wrap, and a copy button. Half the audience for an RSS reader in 2026 reads engineering blogs. Treating code as monospace text is not enough.
+- **Footnotes as popovers.** Tap the marker, read the note in place, no scroll to the bottom and back. Sidenotes in the margin on wide layouts.
+- **Tables scroll in place** and get a full-width mode. Never squashed, never truncated.
+- **Math** renders through MathML, which every target platform now supports natively.
+- **Images** open in a lightbox with pinch-zoom, show their captions, surface alt text for VoiceOver and TalkBack, and get a dimming treatment in dark mode instead of glaring. Galleries become swipeable sets.
+- **Embeds without trackers.** A social post embedded in an article renders as quoted text with the author and a link, fetched server-side (or on-device in local mode), never through the platform's embed script. YouTube embeds use the privacy-enhanced domain and load on tap.
+- **Links know what you know.** A link in an article to something already in your feeds shows a small badge. Tapping it opens the item in the reader, with its own read state, not a browser. A long-press on any link previews the target.
+- **Paywalls, honestly.** If the extracted text is a stub because the site meters, the reader says so at the top instead of pretending. "Open in Safari" uses `SFSafariViewController` on Apple and Custom Tabs on Android, which share the system browser's cookies, so subscriptions the user already pays for just work. The product never circumvents a paywall.
+- **Dead links fall through to the archive.** When the original returns a 404 or the domain is gone, the reader offers the Wayback Machine snapshot from nearest the item's publish date. Link rot is the one problem every long-time RSS user has and no reader addresses.
+- **Listen.** Any article can be read aloud by the platform's own speech engine, with the paragraph being spoken highlighted and read position updated as it goes. A listen queue works like Up Next. It's how a saved pile gets cleared on a walk. No third-party voices, no server.
+- **Handoff and continuity.** Start on the iPhone, the Mac's Dock shows the article, one click continues at the same paragraph. On Android, the same via the account-mode sync, surfaced as a "Continue reading" row at the top of Today on the other device.
+- **Multiple articles open.** Tabs on the Mac and iPad, multiple windows on both. Comparing two posts shouldn't require Saved as a clipboard.
+- **Typography that's yours.** Size, measure, line height, theme (system, light, dark, sepia, and true black for OLED), and a small curated set of faces: the system face, one serif, one humanist sans, one monospace. Per-feed override for the sites whose own design is the point. Reader settings are exported with everything else.
+- **Keyboard everywhere on desktop and web.** `j`/`k` through items, `s` save, `m` mark read, `o` open original, `l` listen, `1`–`9` jump to a folder, `/` search, `⌘K` command palette with every action in it. The web app and the Mac app share the same map.
+
+### After you read: keeping what mattered
+
+- **Highlights and notes.** Select text, highlight, optionally add a note. Highlights sync, appear in Saved grouped by article, and export as Markdown in the shape Obsidian, Logseq, and Readwise accept. This overlap with Readwise Reader stays deliberately shallow: capture well, don't become a second brain.
+- **Tags on saved items.** Free-form, autocompleted, exportable. Saved is a library, not a pile.
+- **Share with the quote.** Sharing from a highlight puts the quoted text, the title, and the link on the share sheet together. Sharing from the article puts the title and link. Nothing custom beyond that; the platform sheet does the rest.
+- **What changed.** Feeds re-deliver updated articles constantly and every reader either ignores it or marks the item unread again. This one keeps the version you read, shows an "updated" chip, and on tap shows the diff: added paragraphs highlighted, removed ones struck. Corrections stop being invisible.
+- **Comment feeds.** Many blogs still publish a per-post comment feed. When one exists, the article's footer shows "12 comments" and expands them inline. Discussion at the source, without a browser.
+- **Follow the author.** Extraction picks up the author name and, where the page declares it, their own site, Mastodon, or Bluesky. A byline becomes a "follow" action that subscribes to the author's own feed, not the outlet's.
+- **Related, from your own feeds.** "3 of your feeds linked to this article" and "this article links to 2 things you've saved". Built from the link graph of what the user already subscribes to. It's the useful half of recommendations without the algorithm half.
+
+### Beyond feeds: the one place articles go
+
+Pocket is gone, Instapaper is quiet, and most people's read-later list is a row of Safari tabs. Saved is designed to be that list for everything, not just feed items.
+
+- **Save anything.** A share extension on Apple and a share target on Android accept any URL from any app, extract it with the same core, and file it in Saved with full offline text. The browser extension does the same on desktop, and also shows a subscribe button on any page that publishes a feed.
+- **Send to another device.** "Read on Mac" from the phone. In account mode this is a sync flag; in local mode it rides on CloudKit. The article is waiting, open, on the other screen.
+- **Widgets.** Home and Lock Screen on iOS, Home Screen on Android, Notification Center on macOS: the Priority lane, the Up Next queue, or a single "continue reading" card. The widget is a doorway to one article, never a badge count.
+- **Shortcuts and App Intents, and the Android equivalents.** "Save this", "What's in Priority", "Read my Up Next aloud" as intents that Siri, Shortcuts, Spotlight, and Google Assistant can call. Saved articles are indexed for Spotlight and Android's app search, so the system search finds things you read.
+- **Digest.** In account mode, an optional morning email or notification: the Priority lane and story clusters from the last day, formatted for reading, with no tracking pixels. For people who want the reader to come to them one time a day and otherwise stay closed.
+
+### Over time: a reading life, not a reading debt
+
+- **Search everything.** Account mode searches every item ever received, not just what's on the device. Local mode searches everything cached, which is everything since install. Operators for feed, folder, author, date, and saved.
+- **Reading review, private and optional.** Off by default. When on, a monthly page computed on the device: what you read, which feeds earned your time, which you never open, the longest thing you finished. Nothing leaves the device, nothing is a streak, nothing is a score.
+- **Subscription hygiene.** "You haven't opened anything from these 14 feeds in 90 days" with a one-tap review. Feed health (errors, stale feeds, redirects that should be followed permanently) lives in the same place. The tree stays honest without the user auditing it.
+- **Blogrolls.** Opt-in: publish a folder as a public OPML and HTML page, and subscribe to other people's. Discovery through people whose taste you trust, which is how blogs found readers before recommendation engines. This is the only social surface in the product and it is a list of links.
+- **Notifications that respect you.** Per-feed, per-rule, or digest-only. A Priority-lane feed can notify on every item; nothing else can without a rule saying so. There is no "you have unread items" nudge and never will be.
+
+### Where each feature lives
+
+Mode and phase, so nothing above reads as a promise for day one.
+
+| Feature | Local | Account | Phase |
+| --- | --- | --- | --- |
+| Feed preview, volume caps, snooze, Up Next, reading time, time filter | Yes | Yes | 1 |
+| Story clustering, cross-feed read state | Yes, on device | Yes | 1 |
+| Structured extraction, code, footnotes, tables, math, images, embeds | Yes | Yes | 1 |
+| Link badges, previews, paywall handling, archive fallback | Yes | Yes | 1 |
+| Listen, Handoff, multiple windows, typography, keyboard | Yes | Yes | 1 |
+| Highlights, notes, tags, share with quote | Yes | Yes | 1 |
+| Save anything (share extension, browser extension) | Yes | Yes | 1 |
+| Widgets, App Intents, Spotlight | Yes | Yes | 1 |
+| What changed (article diffs) | Yes | Yes | 2 |
+| Comment feeds, follow the author, related from your feeds | Yes | Yes | 2 |
+| Send to another device | CloudKit only | Yes | 2 |
+| Weekend queue, subscription hygiene, reading review | Yes | Yes | 2 |
+| Search everything ever received | Cached only | Yes | 0 (service), 1 (clients) |
+| Digest email or notification | No | Yes | 3 |
+| Blogrolls | Publish via export only | Yes | 3 |
+
+Every feature in the table works offline once its data is on the device, and every one of them is in the export.
 
 ---
 
@@ -563,11 +643,11 @@ The free tier is generous on purpose. Feedly and Inoreader both trained users to
 
 **Phase 0: the core, the service, and the web app.** `tributary-core` first, since both the fetcher and every later client depend on it. Then fetcher, api, Supabase schema, sync protocol, Reader API compatibility, the archive format with its round-trip test, competitor importers, and the web app. Ship this first because Reader API compatibility means NetNewsWire, Reeder Classic, Unread, and Lire users can adopt the service before a single native app exists. It also proves the sync layer under real load before the native clients depend on it.
 
-**Phase 1: Apple, both modes.** iOS, iPadOS, macOS from one SwiftUI codebase with platform-specific navigation. Local mode with CloudKit sync and the iCloud Drive mirror ships in this phase, not later, because it's the mode that needs no server and is the honest answer to people leaving Feedly who never want another account. Mode switching in both directions ships here too. This is the flagship reading experience and the one most likely to earn word of mouth.
+**Phase 1: Apple, both modes.** iOS, iPadOS, macOS from one SwiftUI codebase with platform-specific navigation. Local mode with CloudKit sync and the iCloud Drive mirror ships in this phase, not later, because it's the mode that needs no server and is the honest answer to people leaving Feedly who never want another account. Mode switching in both directions ships here too, as does everything marked phase 1 in the reading-experience table: structured extraction, story clustering, snooze, Up Next, listen, save-anything, widgets, and intents. This is the flagship reading experience and the one most likely to earn word of mouth.
 
 **Phase 2: Android, both modes.** Compose, M3 Expressive, adaptive layouts. Same sync client contract as Apple, ported not shared. Whether Android local mode syncs across devices in this phase or ships single-device first is decision 8 below.
 
-**Phase 3: sources.** Newsletter ingest, hosted feed generation, highlights export integrations.
+**Phase 3: sources and the service-only features.** Newsletter ingest, hosted feed generation, highlights export integrations, the digest, and blogrolls.
 
 **Phase 4: intelligence.** On-device first, then BYOK, then hosted.
 
