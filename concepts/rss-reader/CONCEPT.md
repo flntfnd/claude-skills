@@ -160,13 +160,21 @@ Tributary Export 2026-09-07/
 │   ├── items.jsonl          one line per item you have state on:
 │   │                        { feed_url, guid, url, read, saved, read_position,
 │   │                          snoozed_until, tags, note, updated_at }
-│   └── queues.json          Up Next and Weekend, as ordered lists of (feed_url, guid)
-├── saved/
+│   ├── queues.json          Up Next and Weekend, as ordered lists of (feed_url, guid)
+│   └── stacks.json          each stack as an unordered set of (feed_url, guid),
+│                            with its optional name and created_at
+├── saved/                   a vault. Open this folder in Obsidian and it just works.
 │   └── <feed-slug>/
 │       ├── feed.json        JSON Feed 1.1 holding every saved item from that
 │       │                    feed with its extracted content
-│       └── <item-slug>.html the extracted article as a self-contained page,
-│                            images inlined, so it opens in any browser
+│       ├── <item-slug>.md   the article as Markdown with YAML front matter
+│       │                    (title, url, feed, author, published, saved_at,
+│       │                    tags, stacks) and the user's highlights as
+│       │                    blockquotes at the end
+│       ├── <item-slug>.html the same article as a self-contained page,
+│       │                    images inlined, so it opens in any browser
+│       └── <item-slug>/     the article's images, referenced relatively
+│                            from the Markdown
 ├── highlights/
 │   ├── highlights.json      { feed_url, guid, quote, note, position, created_at }
 │   └── <source>.md          one Markdown file per source, in the shape Obsidian
@@ -424,11 +432,15 @@ Reader view is the default, and reader view has to be better than the original s
 
 - **Highlights and notes.** Select text, highlight, optionally add a note. Highlights sync, appear in Saved grouped by article, and export as Markdown in the shape Obsidian, Logseq, and Readwise accept. This overlap with Readwise Reader stays deliberately shallow: capture well, don't become a second brain.
 - **Tags on saved items.** Free-form, autocompleted, exportable. Saved is a library, not a pile.
+- **Stacks.** Drag two saved items together, or long-press and pick "stack with", and they're a stack: an unnamed group of a few things that belong together this week. No folder, no tag, no name unless you want one. Up Next is the one stack that's ordered. Stacks dissolve as easily as they form. This is the missing primitive between "one article" and "a taxonomy".
+- **Quote cards.** Any highlight can become an image: the quote, the attribution, the source, set in the reader's own typography. For the share sheet, not for a feed of them.
 - **Share with the quote.** Sharing from a highlight puts the quoted text, the title, and the link on the share sheet together. Sharing from the article puts the title and link. Nothing custom beyond that; the platform sheet does the rest.
 - **What changed.** Feeds re-deliver updated articles constantly and every reader either ignores it or marks the item unread again. This one keeps the version you read, shows an "updated" chip, and on tap shows the diff: added paragraphs highlighted, removed ones struck. Corrections stop being invisible.
 - **Comment feeds.** Many blogs still publish a per-post comment feed. When one exists, the article's footer shows "12 comments" and expands them inline. Discussion at the source, without a browser.
 - **Follow the author.** Extraction picks up the author name and, where the page declares it, their own site, Mastodon, or Bluesky. A byline becomes a "follow" action that subscribes to the author's own feed, not the outlet's.
 - **Related, from your own feeds.** "3 of your feeds linked to this article" and "this article links to 2 things you've saved". Built from the link graph of what the user already subscribes to. It's the useful half of recommendations without the algorithm half.
+- **Resurfacing.** Saved is a graveyard in every reader, and the fix is not a bigger list. One card in Today, at most one a day, chosen by rule: a saved item older than thirty days that was never opened, or a saved item that something new in your feeds links to, or a saved item from a stack you touched this week. It says why it's there. Dismiss it and it won't return for ninety days; open it and it counts as read. Off switch in Settings. This is the feature that makes saving something feel like it pays back rather than piles up.
+- **Grid view.** Saved, and any folder, can switch from the list to a grid of covers at their natural proportions. For design, photography, and architecture feeds the cover is the content, and a title-only list throws it away. A per-folder view setting, remembered, never the home screen.
 
 ### Beyond feeds: the one place articles go
 
@@ -448,6 +460,15 @@ Pocket is gone, Instapaper is quiet, and most people's read-later list is a row 
 - **Blogrolls.** Opt-in: publish a folder as a public OPML and HTML page, and subscribe to other people's. Discovery through people whose taste you trust, which is how blogs found readers before recommendation engines. This is the only social surface in the product and it is a list of links.
 - **Notifications that respect you.** Per-feed, per-rule, or digest-only. A Priority-lane feed can notify on every item; nothing else can without a rule saying so. There is no "you have unread items" nudge and never will be.
 
+### The rule for what gets in
+
+Resurf 2, Raindrop, and Readwise Reader each show how a reading tool becomes an everything box: voice notes, photos, PDFs, freeform notes, a canvas, OCR. Every one of those is a good feature in a different product. The test for this one is two questions, and a feature has to pass both:
+
+1. Does it operate on something that arrived as an article, meaning a feed item or a saved URL? New capture types fail here.
+2. Does it make something the user already has get read, revisited, or kept better? Organization for its own sake fails here.
+
+Stacks, resurfacing, quote cards, and the Markdown vault pass. A fourth organization layer, a whiteboard, and a voice recorder don't. This rule is in the concept so the next good idea gets the same filter.
+
 ### Where each feature lives
 
 Mode and phase, so nothing above reads as a promise for day one.
@@ -459,7 +480,10 @@ Mode and phase, so nothing above reads as a promise for day one.
 | Structured extraction, code, footnotes, tables, math, images, embeds | Yes | Yes | 1 |
 | Link badges, previews, paywall handling, archive fallback | Yes | Yes | 1 |
 | Listen, Handoff, multiple windows, typography, keyboard | Yes | Yes | 1 |
-| Highlights, notes, tags, share with quote | Yes | Yes | 1 |
+| Highlights, notes, tags, share with quote, quote cards | Yes | Yes | 1 |
+| Stacks, grid view | Yes | Yes | 1 |
+| Saved as a Markdown vault in the archive | Yes | Yes | 1 |
+| Resurfacing | Yes | Yes | 2 |
 | Save anything (share extension, browser extension) | Yes | Yes | 1 |
 | Widgets, App Intents, Spotlight | Yes | Yes | 1 |
 | What changed (article diffs) | Yes | Yes | 2 |
@@ -469,6 +493,7 @@ Mode and phase, so nothing above reads as a promise for day one.
 | Search everything ever received | Cached only | Yes | 0 (service), 1 (clients) |
 | Digest email or notification | No | Yes | 3 |
 | Blogrolls | Publish via export only | Yes | 3 |
+| Ask your saved articles | On-device or BYOK | Plus hosted | 4 |
 
 Every feature in the table works offline once its data is on the device, and every one of them is in the export.
 
@@ -594,6 +619,8 @@ Off by default. Enabled per feature in settings. Three modes, chosen by the user
 
 What it does: summarize an item, summarize a folder's unread, translate, and suggest a lane for a new feed based on its cadence and the user's existing lanes. What it never does: rank, hide, or reorder anything on its own. Every AI output is a card the user asked for.
 
+**Ask your saved articles**, last. A side pane, docked, that answers a question from the user's own Saved library and highlights, citing the articles it drew on with links back into the reader. Retrieval runs over the same full-text index search already uses, so the model only ever sees the passages it was handed, never the library. Scope is Saved and highlights only, not the feed stream; the point is the pile you chose to keep, not everything that came past. It ships in the same three modes as everything else here and not before phase 4, once the summaries plumbing has proven the key handling.
+
 ---
 
 ## 11. Design system and open design decisions
@@ -621,6 +648,8 @@ Decisions that need a designer, not an implementer. Each one changes what gets b
 7. **Brand.** Name, mark, accent color. Accent is the only brand color that appears in the UI.
 8. **The mode picker.** It's the first screen anyone sees and it has to make an architectural choice feel like a preference. Two cards, a comparison, or a single default with "advanced" behind it?
 9. **The mirror in Files.** How the iCloud Drive archive folder presents itself: one folder of dated snapshots, or one live folder that's always current? The concept says live; the Finder experience of that is a design call.
+10. **Grid view covers.** Natural proportions in a masonry layout, or a fixed ratio in a regular grid? Masonry reads as a mood board, a fixed grid reads as a library. Pick one; the two say different things about what Saved is.
+11. **The resurfacing card.** It's the one thing in Today that the user didn't just receive, so it has to look like an invitation and never like an ad. Placement, dismissal, and how it explains itself are design decisions.
 
 Per the `design-tool-gates` skill, the Figma file needs the minimum screen set (Auth, Today with four states, Reader, Settings, navigation shell) in both light and dark before implementation starts.
 
@@ -645,7 +674,7 @@ The free tier is generous on purpose. Feedly and Inoreader both trained users to
 
 **Phase 1: Apple, both modes.** iOS, iPadOS, macOS from one SwiftUI codebase with platform-specific navigation. Local mode with CloudKit sync and the iCloud Drive mirror ships in this phase, not later, because it's the mode that needs no server and is the honest answer to people leaving Feedly who never want another account. Mode switching in both directions ships here too, as does everything marked phase 1 in the reading-experience table: structured extraction, story clustering, snooze, Up Next, listen, save-anything, widgets, and intents. This is the flagship reading experience and the one most likely to earn word of mouth.
 
-**Phase 2: Android, both modes.** Compose, M3 Expressive, adaptive layouts. Same sync client contract as Apple, ported not shared. Whether Android local mode syncs across devices in this phase or ships single-device first is decision 8 below.
+**Phase 2: Android, both modes.** Compose, M3 Expressive, adaptive layouts. Same sync client contract as Apple, ported not shared. Resurfacing and article diffs land across all clients in this phase. Whether Android local mode syncs across devices in this phase or ships single-device first is decision 8 below.
 
 **Phase 3: sources and the service-only features.** Newsletter ingest, hosted feed generation, highlights export integrations, the digest, and blogrolls.
 
