@@ -1,6 +1,6 @@
 # Apple design spec: iOS and macOS
 
-Status: v0.1, September 2026. The Figma file is https://www.figma.com/design/jy7owb9BIQ1x0B4yIW9iZJ (blank at time of writing). This spec is the build order and the values that go into it, so the Figma work is execution, not invention.
+Status: v0.2, September 2026. The Figma file is https://www.figma.com/design/jy7owb9BIQ1x0B4yIW9iZJ and is built to this spec: seven pages, 7 variable collections (88 variables), 12 text styles, 2 effect styles, 20 component sets, and the full minimum screen set for iOS and macOS in Dark and Light. The Findings section at the end records what the build taught us.
 
 Visual direction: native Apple HIG, Liquid Glass on the navigation layer, SF Pro, system semantic colors. No `visual-styles` override. A user should not be able to tell this wasn't shipped by Apple, and it should still read as unmistakably this product through restraint, typography, and the one accent.
 
@@ -267,3 +267,26 @@ Sidebar glass is ambient, does not flip with mode. States match iOS: idle, popul
 7. Handoff page last.
 
 Nothing on a screen is drawn freehand. Every screen is instances of patterns, which are instances of molecules, which are instances of atoms.
+
+## Findings from the build
+
+Things learned building the file that the spec above did not anticipate. They are now rules.
+
+- **Glass is navigation-layer only, and Figma enforces it visually.** Figma's Glass effect darkens a large surface over a flat light background, so a glass content card reads wrong in Light mode. The LinkCard was moved to `background/elevated` with `Shadow/Card`. Glass stays on Toolbar, TabBar, Sidebar, sheets, and the menu bar popover, with `depth` at 0.05 on anything large. This matches the Apple HIG rule and the `apple-platform` anti-pattern list exactly.
+- **Paint-level opacity is dropped when a color variable is bound.** Tints need their own tokens with alpha inside the value: `interactive/primary-tint`, `status/warning-tint`, `status/error-tint` were added to the Color collection.
+- **Icons are stand-ins.** SF Symbols are not available as vectors in the file. The Icon set holds 28 hand-drawn 24pt glyphs named after the SF Symbols they represent. Code uses `Image(systemName:)` with the variant name. Replacing them with the SF Symbols library is a board task.
+- **SF Mono is not installed in the Figma environment.** The Mono text style uses SF Pro Medium and says so in its description. Code uses `.monospaced`.
+- **Component sets added beyond the spec.** `Sidebar/macOS` gained an `Active=Drive` variant. `EmptyState` gained an `Offline` kind for the P2P sender-away state, deliberately without a button.
+- **Plugin API gotchas that cost time**, recorded so the next session does not repeat them: `resize()` after setting sizing modes resets them to fixed; `createAutoLayout` frames default to a white fill; text style `fontName` on a variable font must be reassigned as `{family, style}` only; `combineAsVariants` merges same-named text properties and overwrites per-variant copy; a failed script rolls back the whole call.
+
+## File inventory
+
+| Page | Contents |
+| --- | --- |
+| 🎨 Tokens | Dark and Light specimen boards: semantic swatches, spacing scale, radius scale |
+| 🔤 Typography | The SF Pro ramp rendered in both modes |
+| 🎛 Components | Button, IconButton, Toggle, SegmentedControl, TextField, Badge, ProgressBar, Countdown, Avatar, Icon (28), DropZone, TransportPicker, ExpiryPicker, LinkCard, FileRow, RecipientRow, DropRow, Toolbar/iOS, TabBar/iOS, Sidebar/macOS, Toolbar/macOS, EmptyState |
+| 📐 Patterns | Shell/iOS and Shell/macOS |
+| 📱 iOS | 18 screens × Dark and Light: Send (idle, populated, live, uploading, error), Drop (detail, ended), Receive (password, browser, sender offline), Drops (default, loading, empty, error), Settings, Sign in (entry, sent), Nav collapsed |
+| 💻 macOS | 12 windows × Dark and Light: Send (idle, populated, live, error), Drops (split, empty), Drive (paid, upsell), Settings, Sign-in sheet, Sidebar collapsed, Menu bar popover on a desktop backdrop |
+| 🚢 Handoff | Read-me board (build method, modes, token map, caveats) and flows board (iOS, macOS, motion, non-promises) |
