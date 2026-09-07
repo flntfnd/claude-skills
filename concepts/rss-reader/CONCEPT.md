@@ -653,6 +653,8 @@ Decisions that need a designer, not an implementer. Each one changes what gets b
 
 Per the `design-tool-gates` skill, the Figma file needs the minimum screen set (Auth, Today with four states, Reader, Settings, navigation shell) in both light and dark before implementation starts.
 
+**Design file.** The iOS and macOS design system and screens live in Figma: https://www.figma.com/design/ITHbnI4Gwey9xRHXAl04EY. Pages: Tokens (five variable collections, semantic color with Light and Dark modes, Swift code syntax on every token), Typography (iOS, macOS, and Reader scales in SF Pro), Components (icons, atoms, rows and cards, reader blocks, settings and auth, states, navigation chrome with real Glass effects), macOS, and iOS. It is built to the iOS 27 and macOS 27 design language (edge-to-edge sidebar, uniform frosted toolbar, colored sidebar icons in the active window only) and is the source of truth for token names until code exists.
+
 ---
 
 ## 12. Business model
