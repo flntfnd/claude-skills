@@ -5,7 +5,7 @@ description: Apple platform design system reference for SwiftUI targeting iOS 26
 
 # Apple Platform Design System
 
-SwiftUI only. No UIKit unless explicitly required. Baseline is iOS 26 / iPadOS 26 / macOS Tahoe 26 (Xcode 26 SDK) -- this is the current shipping stable version as of August 2026. iOS 27 / iPadOS 27 / macOS 27 "Golden Gate" are in public beta with GA expected September 2026; don't target them as the baseline yet. See [whats-new-ios27.md](reference/whats-new-ios27.md) for what's changing and what's still unconfirmed.
+SwiftUI only. No UIKit unless explicitly required. Baseline is iOS 26 / iPadOS 26 / macOS Tahoe 26 (Xcode 26 SDK) -- the shipping stable version as of early September 2026. iOS 27 / iPadOS 27 / macOS 27 "Golden Gate" are in late public beta (public beta 6, August 31) with GA expected the week of September 9, 2026. Code still pins 26 until GA; **design files started now should follow the 27 design language**, since the visual changes (edge-to-edge sidebars, uniform frosted toolbars, colored sidebar icons in the active window, one system window radius, reduced default transparency) need no new API and there is no compatibility opt-out under Xcode 27. See [whats-new-ios27.md](reference/whats-new-ios27.md) for the verified list and what's still unconfirmed.
 
 ## Quick Reference
 
@@ -67,9 +67,9 @@ Frame: 1024 x 1366
 **What makes it immediately look like macOS:**
 - Standard window chrome (traffic light buttons top-left, window title centered or leading)
 - Mica-equivalent: the window background adapts to the desktop behind it
-- Sidebar on the left with icon + label navigation
-- Toolbar at the top with glass treatment
-- Concentric corner radius: window corners align with contained elements
+- Sidebar on the left with icon + label navigation. On macOS 27 it runs edge-to-edge and reads as part of the window, not as a floating glass sheet (Tahoe). Icons are colored only in the active window.
+- Toolbar at the top with glass treatment. On macOS 27 that treatment is uniform frosted glass in every app, not clear glass.
+- Concentric corner radius: window corners align with contained elements. On macOS 27 the window radius itself is system-standard and not something an app designs.
 
 **Wrong if:**
 - Tab bar is at the top (that's web or Android)
