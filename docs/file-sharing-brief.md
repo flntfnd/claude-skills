@@ -2,6 +2,11 @@
 
 Status: brainstorm, v0.3 (September 2026). Nothing here is built yet.
 
+This document is the product argument. The implementation specification lives in
+[`build/`](build/README.md), which supersedes this document wherever the two disagree on a
+technical detail. Decisions that changed during specification are recorded with their reasoning in
+[`build/14-decisions.md`](build/14-decisions.md).
+
 ## Thesis
 
 One drop, one link. Sharing is the product. Every interaction starts with a file or folder and ends with a link that dies on a schedule the sender chose. The free product has no folder tree to maintain, no sync client, no "my files" that grows forever. A paid plan adds a persistent, end-to-end encrypted drive, and it exists for one reason: so that sharing something you already keep is instant. It does not turn the product into Dropbox; there is still no sync client and no collaboration layer.
